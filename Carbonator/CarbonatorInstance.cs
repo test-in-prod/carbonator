@@ -101,10 +101,15 @@ namespace Crypton.Carbonator
         }
 
 
+        /// <summary>
+        /// Timer callback that collects metrics
+        /// </summary>
+        /// <param name="state"></param>
         private static void collectMetrics(object state)
         {
             lock (_metricCollectLock)
             {
+                // collect metric samples for each of our counters
                 foreach (var counter in _counters)
                 {
                     float sample = counter.Counter.NextValue();
@@ -117,10 +122,15 @@ namespace Crypton.Carbonator
             }
         }
 
+        /// <summary>
+        /// Timer callback that reports collected metrics
+        /// </summary>
+        /// <param name="state"></param>
         private static void reportMetrics(object state)
         {
             lock (_metricReportLock)
             {
+                // local array that holds metrics so far
                 CollectedMetric[] _arr = null;
                 lock (_metrics)
                 {
@@ -128,6 +138,7 @@ namespace Crypton.Carbonator
                     _metrics.Clear();
                 }
 
+                // if client isn't connected...
                 if (!_tcpClient.Connected)
                 {
                     try
@@ -140,12 +151,20 @@ namespace Crypton.Carbonator
                     }
                 }
 
+                // send metrics if client is connected
                 if (_tcpClient.Connected)
                 {
                     NetworkStream ns = _tcpClient.GetStream();
                     foreach (var metric in _arr)
                     {
-                        byte[] bytes = Encoding.ASCII.GetBytes(metric.ToString());
+                        string metricStr = metric.ToString();
+                        // see http://graphite.readthedocs.org/en/latest/feeding-carbon.html
+                        if (Program.Verbose)
+                        {
+                            Console.Write(metricStr);
+                            Debug.Write(metricStr);
+                        }
+                        byte[] bytes = Encoding.ASCII.GetBytes(metricStr);
                         try
                         {
                             ns.Write(bytes, 0, bytes.Length);   
@@ -156,6 +175,8 @@ namespace Crypton.Carbonator
                 else
                 {
                     // add unsent metrics back to list
+                    // TODO: this may be a memory leak if we are unable to connect to a server for a while
+                    // TODO: drop metrics older than X later
                     lock (_metrics)
                     {
                         _metrics.AddRange(_arr);
