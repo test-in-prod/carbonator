@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -40,6 +41,9 @@ namespace Crypton.Carbonator
                 EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator configuration is missing. This service cannot start", EventLogEntryType.Error);
                 throw new InvalidOperationException("Carbonator configuration is missing. This service cannot start");
             }
+
+            Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
 
             // initialize performance counters
             foreach (Config.PerformanceCounterElement perfcConf in conf.Counters)
