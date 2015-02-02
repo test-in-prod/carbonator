@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config\CarbonatorSection.cs" />
+    <Compile Include="Config\GraphiteExportElement.cs" />
     <Compile Include="Config\PerformanceCounterCollection.cs" />
     <Compile Include="Config\PerformanceCounterElement.cs" />
     <Compile Include="Program.cs" />
