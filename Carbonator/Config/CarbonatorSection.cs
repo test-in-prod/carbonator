@@ -44,5 +44,15 @@ namespace Crypton.Carbonator.Config
             set { base["counters"] = value; }
         }
 
+        /// <summary>
+        /// Gets the configured default thread culture
+        /// </summary>
+        [ConfigurationProperty("defaultCulture", IsRequired = false, DefaultValue = "en-US")]
+        public string DefaultCulture
+        {
+            get { return (string)base["defaultCulture"]; }
+            set { base["defaultCulture"] = value; }
+        }
+
     }
 }
