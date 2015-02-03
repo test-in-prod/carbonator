@@ -48,7 +48,7 @@ Some sample performance counters are provided in default configuration file.
 
 You may need to adjust `defaultCulture` attribute if your Windows installation is localized differently since performance counter names will be translated.
 
-***It may be necessary to add ``NETWORK SERVICE`` (or another user account Carbonator is running as) to ``[Performance Log Users](https://technet.microsoft.com/en-us/library/cc785098%28v=ws.10%29.aspx)`` group or certain counters may not load or report zero for all values.***
+**It may be necessary to add ``NETWORK SERVICE`` (or another user account Carbonator is running as) to [Performance Log Users](https://technet.microsoft.com/en-us/library/cc785098%28v=ws.10%29.aspx) group or certain counters may not load or report zero for all values.**
 
 ## Miscellaneous ##
 
