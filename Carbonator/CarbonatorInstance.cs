@@ -29,6 +29,7 @@ namespace Crypton.Carbonator
         /// <summary>
         /// Starts collection of performance counter metrics and relaying of data to Graphite
         /// </summary>
+        [PerformanceCounterPermission(System.Security.Permissions.SecurityAction.Demand)]
         public static void StartCollection()
         {
             if (_started)
@@ -80,8 +81,8 @@ namespace Crypton.Carbonator
             }
 
             // start collection and reporting timers
-            _metricCollectorTimer = new Timer(collectMetrics, null, 100, 1000);
-            _metricReporterTimer = new Timer(reportMetrics, null, 100, 5000);
+            _metricCollectorTimer = new Timer(collectMetrics, null, 1000, 1000);
+            _metricReporterTimer = new Timer(reportMetrics, null, 5000, 5000);
 
             EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator service has been initialized and began reporting metrics", EventLogEntryType.Information);
         }
@@ -111,6 +112,7 @@ namespace Crypton.Carbonator
         /// Timer callback that collects metrics
         /// </summary>
         /// <param name="state"></param>
+        [PerformanceCounterPermission(System.Security.Permissions.SecurityAction.Demand)]
         private static void collectMetrics(object state)
         {
             lock (_metricCollectLock)
