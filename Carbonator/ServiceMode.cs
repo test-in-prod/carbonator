@@ -18,7 +18,7 @@ namespace Crypton.Carbonator
 
         protected override void OnStart(string[] args)
         {
-            CarbonatorInstance.StopCollection();
+            CarbonatorInstance.StartCollection();
         }
 
         protected override void OnStop()

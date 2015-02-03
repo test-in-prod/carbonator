@@ -82,6 +82,8 @@ namespace Crypton.Carbonator
             // start collection and reporting timers
             _metricCollectorTimer = new Timer(collectMetrics, null, 100, 1000);
             _metricReporterTimer = new Timer(reportMetrics, null, 100, 5000);
+
+            EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator service has been initialized and began reporting metrics", EventLogEntryType.Information);
         }
 
         /// <summary>
@@ -149,9 +151,9 @@ namespace Crypton.Carbonator
                     {
                         _tcpClient.Connect(conf.Graphite.Server, conf.Graphite.Port);
                     }
-                    catch
+                    catch (Exception any)
                     {
-                        // silently catch exception since main Start method checks for a connection
+                        EventLog.WriteEntry(Program.EVENT_SOURCE, "Unable to connect to graphite server: " + any.Message, EventLogEntryType.Error);
                     }
                 }
 
@@ -171,9 +173,12 @@ namespace Crypton.Carbonator
                         byte[] bytes = Encoding.ASCII.GetBytes(metricStr);
                         try
                         {
-                            ns.Write(bytes, 0, bytes.Length);   
+                            ns.Write(bytes, 0, bytes.Length);
                         }
-                        catch { }
+                        catch (Exception any)
+                        {
+                            EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Failed to transmit metric {0} to configured graphite server: {1}", metric.Path, any.Message), EventLogEntryType.Error);
+                        }
                     }
                 }
                 else
