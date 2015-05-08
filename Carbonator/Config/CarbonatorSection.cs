@@ -54,5 +54,15 @@ namespace Crypton.Carbonator.Config
             set { base["defaultCulture"] = value; }
         }
 
+        /// <summary>
+        /// Specifies maximum number of metrics held in the buffer. No new metrics will be added to the buffer if it is full
+        /// </summary>
+        [ConfigurationProperty("maxMetricBufferSize", IsRequired = false, DefaultValue = 21600)]
+        public int MaxMetricBufferSize
+        {
+            get { return (int)base["maxMetricBufferSize"]; }
+            set { base["maxMetricBufferSize"] = value; }
+        }
+
     }
 }
