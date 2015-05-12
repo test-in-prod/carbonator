@@ -55,6 +55,21 @@ namespace Crypton.Carbonator.Config
         }
 
         /// <summary>
+        /// <para>Specifies logging level to Windows Event Log</para>
+        /// <para>0= disable logging</para>
+        /// <para>1= log information-</para>
+        /// <para>2= log warnings (and everything below)</para>
+        /// <para>3= log errors (and everything below)</para>
+        /// <para>4= log all</para>
+        /// </summary>
+        [ConfigurationProperty("logLevel", IsRequired = false, DefaultValue = 1)]
+        public int LogLevel
+        {
+            get { return (int)base["logLevel"]; }
+            set { base["logLevel"] = value; }
+        }
+
+        /// <summary>
         /// Specifies maximum number of metrics held in the buffer. No new metrics will be added to the buffer if it is full
         /// </summary>
         [ConfigurationProperty("maxMetricBufferSize", IsRequired = false, DefaultValue = 21600)]

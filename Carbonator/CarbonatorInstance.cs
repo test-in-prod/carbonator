@@ -18,8 +18,8 @@ namespace Crypton.Carbonator
 
         private static Timer _metricReporterTimer = null;
         private static Timer _metricCollectorTimer = null;
-        private static List<ReportablePerformanceCounter> _counters = new List<ReportablePerformanceCounter>();
         private static BlockingCollection<CollectedMetric> _metricsList = null;
+        private static List<Tuple<string, string, string, PerformanceCounter>> _counters = new List<Tuple<string, string, string, PerformanceCounter>>();
 
         private static bool _started = false;
         private static TcpClient _tcpClient = null;
@@ -45,7 +45,8 @@ namespace Crypton.Carbonator
             conf = Config.CarbonatorSection.Current;
             if (conf == null)
             {
-                EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator configuration is missing. This service cannot start", EventLogEntryType.Error);
+                if (conf.LogLevel >= 3)
+                    EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator configuration is missing. This service cannot start", EventLogEntryType.Error);
                 throw new InvalidOperationException("Carbonator configuration is missing. This service cannot start");
             }
 
@@ -61,35 +62,12 @@ namespace Crypton.Carbonator
                 _metricsList = new BlockingCollection<CollectedMetric>();
             }
 
-            // initialize performance counters
-            foreach (Config.PerformanceCounterElement perfcConf in conf.Counters)
-            {
-                string metricPath = ReportablePerformanceCounter.getMetricPath(perfcConf.Path);
-                PerformanceCounter perfc = null;
-                try
-                {
-                    perfc = new PerformanceCounter(perfcConf.CategoryName, perfcConf.CounterName, perfcConf.InstanceName);
-                    perfc.NextValue();
-                }
-                catch (Exception any)
-                {
-                    EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to initialize performance counter with path '{0}': {1}", perfcConf.Path, any.Message), EventLogEntryType.Warning);
-                    continue;
-                }
-                _counters.Add(new ReportablePerformanceCounter(perfc, metricPath));
-            }
-
-            // make sure we event have counters
-            if (_counters.Count == 0)
-            {
-                EventLog.WriteEntry(Program.EVENT_SOURCE, "No performance counters have been configured or loaded, verify that configuration is correct or nothing will be reported", EventLogEntryType.Warning);
-            }
-
             // start collection and reporting timers
             _metricCollectorTimer = new Timer(collectMetrics, new StateControl(), 1000, 1000);
             _metricReporterTimer = new Timer(reportMetrics, new StateControl(), 5000, 5000);
 
-            EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator service has been initialized and began reporting metrics", EventLogEntryType.Information);
+            if (conf.LogLevel >= 1)
+                EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator service has been initialized and began reporting metrics", EventLogEntryType.Information);
         }
 
         /// <summary>
@@ -108,8 +86,11 @@ namespace Crypton.Carbonator
                 _tcpClient.Close();
 
             foreach (var counter in _counters)
-                counter.Counter.Dispose();
+            {
+                counter.Item4.Dispose();
+            }
             _counters.Clear();
+
             _metricsList.Dispose();
         }
 
@@ -126,17 +107,76 @@ namespace Crypton.Carbonator
                 return; // skip this run if we're already collecting data
             control.IsRunning = true;
 
+            // determine how long it takes for us to collect metrics
+            // we'll adjust timer so that collecting this data is slightly more accurate
+            // but not too much to cause skew in performance (e.g. our CPU usage goes up when we do this)
+            Stopwatch timeTaken = new Stopwatch();
+            timeTaken.Start();
+
             // collect metric samples for each of our counters
-            foreach (var counter in _counters)
+            foreach (Config.PerformanceCounterElement counterConfig in Config.CarbonatorSection.Current.Counters)
             {
-                float sample = counter.Counter.NextValue();
-                string path = counter.MetricPath;
+                float sampleValue = 0f;
+                string metricPath = getMetricPath(counterConfig.Path);
+                // counter in list
+                var perfCounterEntry = _counters.FirstOrDefault(c => c.Item1 == counterConfig.CategoryName && c.Item2 == counterConfig.CounterName && c.Item3 == counterConfig.InstanceName);
+                if (perfCounterEntry == null)
+                {
+                    try
+                    {
+                        PerformanceCounter counter = new PerformanceCounter(counterConfig.CategoryName, counterConfig.CounterName, counterConfig.InstanceName);
+                        counter.NextValue();
+                        perfCounterEntry = new Tuple<string, string, string, PerformanceCounter>(counterConfig.CategoryName, counterConfig.CounterName, counterConfig.InstanceName, counter);
+                    }
+                    catch (Exception any)
+                    {
+                        if (Config.CarbonatorSection.Current.LogLevel >= 2)
+                            EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to initialize performance counter with path '{0}': {1}", metricPath, any.Message), EventLogEntryType.Warning);
+                        continue;
+                    }
+                    _counters.Add(perfCounterEntry);
+                }
+
+                try
+                {
+                    sampleValue = perfCounterEntry.Item4.NextValue();
+                }
+                catch (Exception any)
+                {
+                    if (Config.CarbonatorSection.Current.LogLevel >= 2)
+                        EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to collect performance counter with path '{0}': {1}", metricPath, any.Message), EventLogEntryType.Warning);
+                    // remove from list
+                    _counters.Remove(perfCounterEntry);
+                    continue;
+                }
 
                 // BlockingCollection will halt this thread if we are exceeding capacity
-                _metricsList.Add(new CollectedMetric(path, sample));
+                _metricsList.Add(new CollectedMetric(metricPath, sampleValue));
+            }
+
+            timeTaken.Stop();
+
+            // adjust how often we collect metrics to stay within hysteresis
+            int periodTime = (int)Math.Abs(1000 - (int)timeTaken.ElapsedMilliseconds);
+            if (periodTime > 100 && periodTime <= 1000)
+            {
+                _metricCollectorTimer.Change(100, periodTime);
+                if (Config.CarbonatorSection.Current.LogLevel >= 4)
+                    EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Adjusted _metricCollector periodTime={0}ms", periodTime), EventLogEntryType.Information);
             }
 
             control.IsRunning = false;
+        }
+
+        /// <summary>
+        /// Gets metric path from configuration and formats it for reporting
+        /// </summary>
+        /// <param name="configuredPath"></param>
+        /// <returns></returns>
+        public static string getMetricPath(string configuredPath)
+        {
+            return configuredPath
+                .Replace("%HOST%", Environment.MachineName); // one and only special variable so far
         }
 
         /// <summary>
@@ -166,7 +206,8 @@ namespace Crypton.Carbonator
                     }
                     catch (Exception any)
                     {
-                        EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to connect to graphite server (retrying after {1}ms): {0}", any.Message, reconnectInterval), EventLogEntryType.Error);
+                        if (Config.CarbonatorSection.Current.LogLevel >= 3)
+                            EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to connect to graphite server (retrying after {1}ms): {0}", any.Message, reconnectInterval), EventLogEntryType.Error);
                         reconnectInterval = reconnectInterval + reconnectStepInterval < reconnectMaxInterval ? reconnectInterval + reconnectStepInterval : reconnectMaxInterval;
                         Thread.Sleep(reconnectInterval);
                         reconnect = true;
@@ -195,13 +236,15 @@ namespace Crypton.Carbonator
                     }
                     catch (Exception any)
                     {
-                        EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Failed to transmit metric {0} to configured graphite server: {1}", metric.Path, any.Message), EventLogEntryType.Error);
+                        if (Config.CarbonatorSection.Current.LogLevel >= 3)
+                            EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Failed to transmit metric {0} to configured graphite server: {1}", metric.Path, any.Message), EventLogEntryType.Error);
                         // put metric back into the queue
                         // metric will be lost if this times out
                         // the TryAdd will block until timeout if the buffer is full for example
                         if (!_metricsList.TryAdd(metric, 100))
                         {
-                            EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Lost metric because the buffer is full, consider increasing the buffer or diagnosing the underlying problem"), EventLogEntryType.Warning);
+                            if (Config.CarbonatorSection.Current.LogLevel >= 2)
+                                EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Lost metric because the buffer is full, consider increasing the buffer or diagnosing the underlying problem"), EventLogEntryType.Warning);
                         }
                     }
                 }
