@@ -220,7 +220,7 @@ namespace Crypton.Carbonator
             {
                 NetworkStream ns = _tcpClient.GetStream();
                 CollectedMetric metric;
-                while (_metricsList.TryTake(out metric, 100))
+                while (_metricsList.TryTake(out metric, 100) && _tcpClient.Connected)
                 {
                     string metricStr = metric.ToString();
                     // see http://graphite.readthedocs.org/en/latest/feeding-carbon.html
