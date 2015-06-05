@@ -146,6 +146,7 @@ namespace Crypton.Carbonator
                     if (Config.CarbonatorSection.Current.LogLevel >= 2)
                         EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to collect performance counter with path '{0}': {1}", metricPath, any.Message), EventLogEntryType.Warning);
                     // remove from list
+                    perfCounterEntry.Item4.Dispose();
                     _counters.Remove(perfCounterEntry);
                     continue;
                 }
