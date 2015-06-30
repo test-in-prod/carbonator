@@ -122,14 +122,17 @@ namespace Crypton.Carbonator
                 var perfCounterEntry = _counters.FirstOrDefault(c => c.Item1 == counterConfig.CategoryName && c.Item2 == counterConfig.CounterName && c.Item3 == counterConfig.InstanceName);
                 if (perfCounterEntry == null)
                 {
+                    PerformanceCounter counter = null;
                     try
                     {
-                        PerformanceCounter counter = new PerformanceCounter(counterConfig.CategoryName, counterConfig.CounterName, counterConfig.InstanceName);
+                        counter = new PerformanceCounter(counterConfig.CategoryName, counterConfig.CounterName, counterConfig.InstanceName);
                         counter.NextValue();
                         perfCounterEntry = new Tuple<string, string, string, PerformanceCounter>(counterConfig.CategoryName, counterConfig.CounterName, counterConfig.InstanceName, counter);
                     }
                     catch (Exception any)
                     {
+                        if (counter != null)
+                            counter.Dispose();
                         if (Config.CarbonatorSection.Current.LogLevel >= 2)
                             EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to initialize performance counter with path '{0}': {1}", metricPath, any.Message), EventLogEntryType.Warning);
                         continue;
