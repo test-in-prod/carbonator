@@ -63,8 +63,8 @@ namespace Crypton.Carbonator
             }
 
             // start collection and reporting timers
-            _metricCollectorTimer = new Timer(collectMetrics, new StateControl(), 1000, 1000);
-            _metricReporterTimer = new Timer(reportMetrics, new StateControl(), 5000, 5000);
+            _metricCollectorTimer = new Timer(collectMetrics, new StateControl(), conf.CollectionInterval, conf.CollectionInterval);
+            _metricReporterTimer = new Timer(reportMetrics, new StateControl(), conf.ReportingInterval, conf.ReportingInterval);
 
             if (conf.LogLevel >= 1)
                 EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator service has been initialized and began reporting metrics", EventLogEntryType.Information);
