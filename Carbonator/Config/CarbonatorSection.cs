@@ -69,6 +69,19 @@ namespace Crypton.Carbonator.Config
             set { base["logLevel"] = value; }
         }
 
+        [ConfigurationProperty("collectionInterval", IsRequired = false, DefaultValue = 1000)]
+        public int CollectionInterval
+        {
+            get { return (int)base["collectionInterval"]; }
+            set { base["collectionInterval"] = value; }
+        }
+
+        [ConfigurationProperty("reportingInterval", IsRequired = false, DefaultValue = 5000)]
+        public int ReportingInterval
+        {
+            get { return (int)base["reportingInterval"]; }
+            set { base["reportingInterval"] = value; }
+        }
         /// <summary>
         /// Specifies maximum number of metrics held in the buffer. No new metrics will be added to the buffer if it is full
         /// </summary>
