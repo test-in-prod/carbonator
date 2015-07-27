@@ -3,10 +3,7 @@
 A simple Windows Service that collects [Performance Counters](https://msdn.microsoft.com/en-us/library/windows/desktop/aa373083%28v=vs.85%29.aspx) and 
 reports metrics to a [Graphite](http://graphite.readthedocs.org/en/latest/overview.html) server.
 
-### New in v1.2 ###
-
- - Simplified counter metric collection cycle. Carbonator will try to connect to the Performance Counter on each timer cycle (useful when certain counters become available and unavailable)
- - Same counter metric collection timer will readjust to be within 1s activation time as possible.
+See [releases](https://github.com/CryptonZylog/carbonator/releases) for change log/version history.
 
 ## Compiling ##
 
