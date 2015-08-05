@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -42,7 +43,7 @@ namespace Crypton.Carbonator
         /// <returns></returns>
         public override string ToString()
         {
-            return string.Format("{0} {1:0.000} {2}\n", Path, Value, Timestamp);
+            return string.Format(CultureInfo.InvariantCulture, "{0} {1:0.000} {2}\n", Path, Value, Timestamp);
         }
 
     }

@@ -107,6 +107,10 @@ namespace Crypton.Carbonator
                 return; // skip this run if we're already collecting data
             control.IsRunning = true;
 
+            // restore configured culture setting for this async thread
+            Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
+
             // determine how long it takes for us to collect metrics
             // we'll adjust timer so that collecting this data is slightly more accurate
             // but not too much to cause skew in performance (e.g. our CPU usage goes up when we do this)
@@ -193,7 +197,7 @@ namespace Crypton.Carbonator
             if (control.IsRunning)
                 return; // skip this run if we're already collecting data
             control.IsRunning = true;
-
+            
             // if client isn't connected...
             if (_tcpClient == null || !_tcpClient.Connected)
             {
