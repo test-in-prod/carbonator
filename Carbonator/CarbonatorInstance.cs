@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Crypton.Carbonator
@@ -20,6 +22,8 @@ namespace Crypton.Carbonator
         private static Timer _metricCollectorTimer = null;
         private static BlockingCollection<CollectedMetric> _metricsList = null;
         private static List<Tuple<string, string, string, PerformanceCounter>> _counters = new List<Tuple<string, string, string, PerformanceCounter>>();
+
+        private static Dictionary<string, string> _metricNameCache  = new Dictionary<string, string>();
 
         private static bool _started = false;
         private static TcpClient _tcpClient = null;
@@ -183,8 +187,25 @@ namespace Crypton.Carbonator
         /// <returns></returns>
         public static string getMetricPath(string configuredPath)
         {
-            return configuredPath
-                .Replace("%HOST%", Environment.MachineName); // one and only special variable so far
+            if (!_metricNameCache.ContainsKey(configuredPath))
+            {
+                var finalPath = configuredPath;
+
+                Console.WriteLine("Rewriting graphite path '{0}'...", configuredPath);
+                foreach (DictionaryEntry envPair in Environment.GetEnvironmentVariables())
+                {
+                    var key = envPair.Key.ToString().ToUpper();
+                    var value = new Regex(@"\W").Replace(envPair.Value.ToString(), "_");
+
+                    Console.WriteLine("Replacing environment variable '%{0}%' with '{1}'", key, value);
+                    finalPath = finalPath.Replace(string.Format("%{0}%", key), value);
+                }
+                Console.WriteLine("Finished rewriting graphite path '{0}'", finalPath);
+
+                _metricNameCache.Add(configuredPath, finalPath);
+            }
+
+            return _metricNameCache[configuredPath];
         }
 
         /// <summary>
