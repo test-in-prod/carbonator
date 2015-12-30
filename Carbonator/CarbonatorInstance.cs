@@ -183,8 +183,10 @@ namespace Crypton.Carbonator
         /// <returns></returns>
         public static string getMetricPath(string configuredPath)
         {
+            // one and only special variable so far
             return configuredPath
-                .Replace("%HOST%", Environment.MachineName); // one and only special variable so far
+                .Replace("%HOST%", Environment.MachineName)
+                .Replace("%host%", Environment.MachineName.ToLowerInvariant());
         }
 
         /// <summary>

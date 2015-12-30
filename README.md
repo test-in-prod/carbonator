@@ -40,7 +40,7 @@ to determine which counters you may be interested (and which are available).
 The configuration for each performance counter element is self explanatory:
 
 - `path` = the Graphite/Carbon metric path that will be reported. 
-  You can use ``%HOST%`` special string in the `path` setting which will be replaced with the name of the current computer when metric is reported.
+  You can use ``%HOST%`` special string in the `path` setting which will be replaced with the name of the current computer when metric is reported. Use ``%host%`` to force the hostname in lowercase.
 - `category` = Performance Counter category
 - `counter` = Performance Counter name
 - `instance` = Performance Counter instance, needed by certain counters such as Processor (_Total to represent overall CPU usage or by specific CPU instead).
