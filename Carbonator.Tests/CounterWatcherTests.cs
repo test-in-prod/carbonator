@@ -4,6 +4,7 @@ using Crypton.Carbonator;
 using System.Collections.Generic;
 using System.Threading;
 using System.Globalization;
+using System.Diagnostics;
 
 namespace Carbonator.Tests
 {
@@ -25,11 +26,13 @@ namespace Carbonator.Tests
 
             List<CollectedMetric> metrics = new List<CollectedMetric>();
 
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             for (var i = 0; i < 10; i++)
             {
                 watcher.Report(metrics);
-                Thread.Sleep(1000);
             }
+            sw.Stop();
             
             
 

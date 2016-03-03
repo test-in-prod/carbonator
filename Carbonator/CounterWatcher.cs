@@ -132,15 +132,23 @@ namespace Crypton.Carbonator
         /// <exception cref="System.InvalidOperationException"></exception>
         /// <exception cref="System.ArgumentException"></exception>
         /// <exception cref="System.ComponentModel.Win32Exception"></exception>
-        public void Report(ICollection<CollectedMetric> metrics)
+        public void Report(ICollection<CollectedMetric> metrics, bool throwExceptions = true)
         {
             // sample each counter we have values for
             foreach (var counter in _counters)
             {
                 string path = FormatMetricPath(counter, MetricPath);
-                float value = counter.NextValue();
-                CollectedMetric metric = new CollectedMetric(path, value);
-                metrics.Add(metric);
+                try
+                {
+                    float value = counter.NextValue();
+                    CollectedMetric metric = new CollectedMetric(path, value);
+                    metrics.Add(metric);
+                }
+                catch
+                {
+                    if (throwExceptions)
+                        throw;
+                }
             }
         }
 
@@ -235,7 +243,7 @@ namespace Crypton.Carbonator
         /// </summary>
         public void Dispose()
         {
-            foreach(var counter in _counters)
+            foreach (var counter in _counters)
             {
                 counter.Dispose();
             }

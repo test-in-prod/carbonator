@@ -21,9 +21,7 @@ namespace Crypton.Carbonator
         private static Timer _metricReporterTimer = null;
         private static Timer _metricCollectorTimer = null;
         private static BlockingCollection<CollectedMetric> _metricsList = null;
-        private static List<Tuple<string, string, string, PerformanceCounter>> _counters = new List<Tuple<string, string, string, PerformanceCounter>>();
-
-        private static Dictionary<string, string> _metricNameCache  = new Dictionary<string, string>();
+        private static List<CounterWatcher> _watchers = new List<CounterWatcher>();
 
         private static bool _started = false;
         private static TcpClient _tcpClient = null;
@@ -66,6 +64,22 @@ namespace Crypton.Carbonator
                 _metricsList = new BlockingCollection<CollectedMetric>();
             }
 
+            // load counter watchers that will actually collect metrics for us
+            foreach (Config.PerformanceCounterElement counterConfig in Config.CarbonatorSection.Current.Counters)
+            {
+                CounterWatcher watcher = new CounterWatcher(counterConfig);
+                try
+                {
+                    watcher.Initialize();
+                }
+                catch (Exception any)
+                {
+
+                    continue;
+                }
+                _watchers.Add(watcher);
+            }
+
             // start collection and reporting timers
             _metricCollectorTimer = new Timer(collectMetrics, new StateControl(), conf.CollectionInterval, conf.CollectionInterval);
             _metricReporterTimer = new Timer(reportMetrics, new StateControl(), conf.ReportingInterval, conf.ReportingInterval);
@@ -89,11 +103,11 @@ namespace Crypton.Carbonator
             if (_tcpClient != null && _tcpClient.Connected)
                 _tcpClient.Close();
 
-            foreach (var counter in _counters)
+            foreach (var watcher in _watchers)
             {
-                counter.Item4.Dispose();
+                watcher.Dispose();
             }
-            _counters.Clear();
+            _watchers.Clear();
 
             _metricsList.Dispose();
         }
@@ -115,103 +129,30 @@ namespace Crypton.Carbonator
             Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
             Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
 
-            // determine how long it takes for us to collect metrics
-            // we'll adjust timer so that collecting this data is slightly more accurate
-            // but not too much to cause skew in performance (e.g. our CPU usage goes up when we do this)
-            Stopwatch timeTaken = new Stopwatch();
-            timeTaken.Start();
-
-            // collect metric samples for each of our counters
-            foreach (Config.PerformanceCounterElement counterConfig in Config.CarbonatorSection.Current.Counters)
+            // gather metrics from all watchers
+            List<CollectedMetric> metrics = new List<CollectedMetric>();
+            foreach (var watcher in _watchers)
             {
-                float sampleValue = 0f;
-                string metricPath = getMetricPath(counterConfig.Path);
-                // counter in list
-                var perfCounterEntry = _counters.FirstOrDefault(c => c.Item1 == counterConfig.CategoryName && c.Item2 == counterConfig.CounterName && c.Item3 == counterConfig.InstanceName);
-                if (perfCounterEntry == null)
-                {
-                    PerformanceCounter counter = null;
-                    try
-                    {
-                        counter = new PerformanceCounter(counterConfig.CategoryName, counterConfig.CounterName, counterConfig.InstanceName);
-                        counter.NextValue();
-                        perfCounterEntry = new Tuple<string, string, string, PerformanceCounter>(counterConfig.CategoryName, counterConfig.CounterName, counterConfig.InstanceName, counter);
-                    }
-                    catch (Exception any)
-                    {
-                        if (counter != null)
-                            counter.Dispose();
-                        if (Config.CarbonatorSection.Current.LogLevel >= 2)
-                            EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to initialize performance counter with path '{0}': {1}", metricPath, any.Message), EventLogEntryType.Warning);
-                        continue;
-                    }
-                    _counters.Add(perfCounterEntry);
-                }
-
                 try
                 {
-                    sampleValue = perfCounterEntry.Item4.NextValue();
+                    watcher.Report(metrics);
                 }
                 catch (Exception any)
                 {
-                    if (Config.CarbonatorSection.Current.LogLevel >= 2)
-                        EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to collect performance counter with path '{0}': {1}", metricPath, any.Message), EventLogEntryType.Warning);
-                    // remove from list
-                    perfCounterEntry.Item4.Dispose();
-                    _counters.Remove(perfCounterEntry);
                     continue;
                 }
-
-                // BlockingCollection will halt this thread if we are exceeding capacity
-                _metricsList.Add(new CollectedMetric(metricPath, sampleValue));
             }
 
-            timeTaken.Stop();
-
-            // adjust how often we collect metrics to stay within hysteresis
-            int periodTime = (int)Math.Abs(1000 - (int)timeTaken.ElapsedMilliseconds);
-            if (periodTime > 100 && periodTime <= 1000)
+            // transfer metrics over for sending
+            foreach (var item in metrics)
             {
-                _metricCollectorTimer.Change(100, periodTime);
-                if (Config.CarbonatorSection.Current.LogLevel >= 4)
-                    EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Adjusted _metricCollector periodTime={0}ms", periodTime), EventLogEntryType.Information);
+                if (!_metricsList.TryAdd(item))
+                {
+
+                }
             }
 
             control.IsRunning = false;
-        }
-
-        /// <summary>
-        /// Gets metric path from configuration and formats it for reporting
-        /// </summary>
-        /// <param name="configuredPath"></param>
-        /// <returns></returns>
-        public static string getMetricPath(string configuredPath)
-        {
-            if (!_metricNameCache.ContainsKey(configuredPath))
-            {
-                var finalPath = configuredPath;
-
-                // preserve existing known variables
-                finalPath = finalPath
-                    .Replace("%HOST%", Environment.MachineName)
-                    .Replace("%host%", Environment.MachineName.ToLowerInvariant());
-
-                // 
-                Console.WriteLine("Rewriting graphite path '{0}'...", configuredPath);
-                foreach (DictionaryEntry envPair in Environment.GetEnvironmentVariables())
-                {
-                    var key = envPair.Key.ToString().ToUpper();
-                    var value = new Regex(@"\W").Replace(envPair.Value.ToString(), "_");
-
-                    Console.WriteLine("Replacing environment variable '%{0}%' with '{1}'", key, value);
-                    finalPath = finalPath.Replace(string.Format("%{0}%", key), value);
-                }
-                Console.WriteLine("Finished rewriting graphite path '{0}'", finalPath);
-
-                _metricNameCache.Add(configuredPath, finalPath);
-            }
-
-            return _metricNameCache[configuredPath];
         }
 
         /// <summary>
@@ -224,7 +165,7 @@ namespace Crypton.Carbonator
             if (control.IsRunning)
                 return; // skip this run if we're already collecting data
             control.IsRunning = true;
-            
+
             // if client isn't connected...
             if (_tcpClient == null || !_tcpClient.Connected)
             {
