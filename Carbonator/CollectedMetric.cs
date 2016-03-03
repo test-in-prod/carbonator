@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -10,6 +11,7 @@ namespace Crypton.Carbonator
     /// <summary>
     /// Defines a structure for collected metric
     /// </summary>
+    [DebuggerDisplay("Path={Path} Value={Value}")]
     public struct CollectedMetric
     {
 
