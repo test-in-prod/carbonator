@@ -1,5 +1,6 @@
 ﻿using Crypton.Carbonator.Config;
 using log4net;
+using log4net.Config;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -42,6 +43,7 @@ namespace Crypton.Carbonator
 
             if (type == Types.Log4Net)
             {
+                XmlConfigurator.Configure();
                 log4net = LogManager.GetLogger(typeof(Log));
             }
         }
