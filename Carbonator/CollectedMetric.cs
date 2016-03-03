@@ -6,11 +6,11 @@ using System.Text;
 
 namespace Crypton.Carbonator
 {
-    
+
     /// <summary>
     /// Defines a structure for collected metric
     /// </summary>
-    struct CollectedMetric
+    public struct CollectedMetric
     {
 
         public static readonly DateTime Epoch = DateTime.SpecifyKind(new DateTime(1970, 1, 1), DateTimeKind.Utc);
