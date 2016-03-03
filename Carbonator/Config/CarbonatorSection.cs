@@ -62,6 +62,7 @@ namespace Crypton.Carbonator.Config
         /// <para>3= log errors (and everything below)</para>
         /// <para>4= log all</para>
         /// </summary>
+        [Obsolete]
         [ConfigurationProperty("logLevel", IsRequired = false, DefaultValue = 1)]
         public int LogLevel
         {
@@ -69,6 +70,19 @@ namespace Crypton.Carbonator.Config
             set { base["logLevel"] = value; }
         }
 
+        /// <summary>
+        /// Specifies where Carbonator logs will be sent to (eventlog, log4net, none)
+        /// </summary>
+        [ConfigurationProperty("logType", IsRequired = false, DefaultValue = "eventlog")]
+        public string LogType
+        {
+            get { return (string)base["logType"]; }
+            set { base["logType"] = value; }
+        }
+
+        /// <summary>
+        /// Species an interval in milliseconds when metrics are collected into a buffer
+        /// </summary>
         [ConfigurationProperty("collectionInterval", IsRequired = false, DefaultValue = 1000)]
         public int CollectionInterval
         {
@@ -76,6 +90,9 @@ namespace Crypton.Carbonator.Config
             set { base["collectionInterval"] = value; }
         }
 
+        /// <summary>
+        /// Specifies an interval in milliseconds when metrics are reported from a buffer to the destination graphite server
+        /// </summary>
         [ConfigurationProperty("reportingInterval", IsRequired = false, DefaultValue = 5000)]
         public int ReportingInterval
         {

@@ -47,8 +47,7 @@ namespace Crypton.Carbonator
             conf = Config.CarbonatorSection.Current;
             if (conf == null)
             {
-                if (conf.LogLevel >= 3)
-                    EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator configuration is missing. This service cannot start", EventLogEntryType.Error);
+                Log.Fatal("[StartCollection] Carbonator configuration is missing. This service cannot start");
                 throw new InvalidOperationException("Carbonator configuration is missing. This service cannot start");
             }
 
@@ -74,7 +73,7 @@ namespace Crypton.Carbonator
                 }
                 catch (Exception any)
                 {
-
+                    Log.Error("[StartCollection] Failed to initialize performance counter watcher for path '{0}'; this configuration element will be skipped: {1} (inner: {2})", counterConfig.Path, any.Message, any.InnerException != null ? any.InnerException.Message : "(null)");
                     continue;
                 }
                 _watchers.Add(watcher);
@@ -84,8 +83,7 @@ namespace Crypton.Carbonator
             _metricCollectorTimer = new Timer(collectMetrics, new StateControl(), conf.CollectionInterval, conf.CollectionInterval);
             _metricReporterTimer = new Timer(reportMetrics, new StateControl(), conf.ReportingInterval, conf.ReportingInterval);
 
-            if (conf.LogLevel >= 1)
-                EventLog.WriteEntry(Program.EVENT_SOURCE, "Carbonator service has been initialized and began reporting metrics", EventLogEntryType.Information);
+            Log.Info("[StartCollection] Carbonator service loaded {0} watchers", _watchers.Count);
         }
 
         /// <summary>
@@ -139,6 +137,7 @@ namespace Crypton.Carbonator
                 }
                 catch (Exception any)
                 {
+                    Log.Warning("[collectMetrics] Failed to Report on counter watcher for path '{0}'; this report will be skipped for now: {1} (inner: {2})", watcher.MetricPath, any.Message, any.InnerException != null ? any.InnerException.Message : "(null)");
                     continue;
                 }
             }
@@ -148,7 +147,7 @@ namespace Crypton.Carbonator
             {
                 if (!_metricsList.TryAdd(item))
                 {
-
+                    Log.Warning("[collectMetrics] Failed to relocate collected metrics to buffer for sending, buffer may be full; increase metric buffer in configuration");
                 }
             }
 
@@ -182,8 +181,7 @@ namespace Crypton.Carbonator
                     }
                     catch (Exception any)
                     {
-                        if (Config.CarbonatorSection.Current.LogLevel >= 3)
-                            EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Unable to connect to graphite server (retrying after {1}ms): {0}", any.Message, reconnectInterval), EventLogEntryType.Error);
+                        Log.Error("[reportMetrics] Unable to connect to graphite server (retrying after {1}ms): {0}", any.Message, reconnectInterval);
                         reconnectInterval = reconnectInterval + reconnectStepInterval < reconnectMaxInterval ? reconnectInterval + reconnectStepInterval : reconnectMaxInterval;
                         Thread.Sleep(reconnectInterval);
                         reconnect = true;
@@ -200,11 +198,7 @@ namespace Crypton.Carbonator
                 {
                     string metricStr = metric.ToString();
                     // see http://graphite.readthedocs.org/en/latest/feeding-carbon.html
-                    if (Program.Verbose)
-                    {
-                        Console.Write(metricStr);
-                        Debug.Write(metricStr);
-                    }
+                    Log.Debug("[reportMetrics] reporting: {0}", metricStr.Substring(0, metricStr.Length - 1)); // the Length-1 is to remove the newline at the end for nicer log
                     byte[] bytes = Encoding.ASCII.GetBytes(metricStr);
                     try
                     {
@@ -212,15 +206,13 @@ namespace Crypton.Carbonator
                     }
                     catch (Exception any)
                     {
-                        if (Config.CarbonatorSection.Current.LogLevel >= 3)
-                            EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Failed to transmit metric {0} to configured graphite server: {1}", metric.Path, any.Message), EventLogEntryType.Error);
+                        Log.Error("[reportMetrics] Failed to transmit metric {0} to configured graphite server: {1}", metric.Path, any.Message);
                         // put metric back into the queue
                         // metric will be lost if this times out
                         // the TryAdd will block until timeout if the buffer is full for example
                         if (!_metricsList.TryAdd(metric, 100))
                         {
-                            if (Config.CarbonatorSection.Current.LogLevel >= 2)
-                                EventLog.WriteEntry(Program.EVENT_SOURCE, string.Format("Lost metric because the buffer is full, consider increasing the buffer or diagnosing the underlying problem"), EventLogEntryType.Warning);
+                            Log.Error("[reportMetrics] Metric buffer may be full, consider increasing the metric buffer or determine if carbon server is reachable", metric.Path, any.Message);
                         }
                     }
                 }

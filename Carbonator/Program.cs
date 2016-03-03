@@ -11,6 +11,7 @@ namespace Crypton.Carbonator
 
         public const string EVENT_SOURCE = "carbonator";
         public static bool Verbose = false;
+        public static bool ConsoleMode = false;
 
         public static void Main(string[] args)
         {
@@ -29,6 +30,7 @@ namespace Crypton.Carbonator
             else
             {
                 // console mode
+                ConsoleMode = true;
                 CarbonatorInstance.StartCollection();
                 Console.WriteLine("Press any key to stop . . .");
                 Console.ReadKey();

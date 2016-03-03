@@ -143,6 +143,8 @@ namespace Crypton.Carbonator
                     float value = counter.NextValue();
                     CollectedMetric metric = new CollectedMetric(path, value);
                     metrics.Add(metric);
+
+                    Log.Debug("[CounterWatcher/Report] collected {0}/{1}{2} for path {3}: {4}", counter.CategoryName, counter.CounterName, counter.InstanceName, path, value);
                 }
                 catch
                 {
@@ -234,6 +236,7 @@ namespace Crypton.Carbonator
                 // this may be thrown on a workgroup-only machine (e.g. not on a domain)
                 // therefore, use user's domain name, which would just include the computer name
                 domain = Environment.UserDomainName;
+                Log.Debug("[CounterWatcher/resolveDomainName] unable to use A/D, using UserDomainName: {0}", domain);
             }
             return domain;
         }
