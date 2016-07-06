@@ -1,4 +1,4 @@
-﻿# Carbonator Service #
+# Carbonator Service #
 
 A simple Windows Service that collects [Performance Counters](https://msdn.microsoft.com/en-us/library/windows/desktop/aa373083%28v=vs.85%29.aspx) and 
 reports metrics to a [Graphite](http://graphite.readthedocs.org/en/latest/overview.html) server.
@@ -7,9 +7,23 @@ See [releases](https://github.com/CryptonZylog/carbonator/releases) for change l
 
 ## Compiling ##
 
-Run ``build.cmd`` from within directory where ``Carbonator.sln`` is located.
+#### Via command-line (CMD or PowerShell) ####
 
-The binaries should then be present in ``Carbonator\bin\Release`` directory.
+[Skip 1-3 if you already have nuget installed]
+
+1. Carbonator uses nuget package manager for log4net and any future external packages
+2. If you don't have nuget, see https://docs.nuget.org/consume/installing-nuget (command line utility)
+3. Install nuget above and add path to nuget.exe to your PATH environment variable
+4. Start your command prompt/powershell in directory where Carbonator.sln is located
+5. Run ``nuget restore Carbonator.sln`` to restore packages
+6. Run ``build.cmd`` to compile Carbonator
+7. The binaries should be present in ``Carbonator\bin\Release`` directory
+
+#### Via Visual Studio (2013/2015/CE) ####
+
+1. Open Carbonator.sln
+2. Build Solution (F6)
+3. The binaries should be present in ``Carbonator\bin\Release`` directory
 
 ## Installation ##
 
