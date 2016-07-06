@@ -27,7 +27,9 @@ See [releases](https://github.com/CryptonZylog/carbonator/releases) for change l
 
 ## Installation ##
 
-Copy binaries to wherever directory you want application to run from. (e.g. ``C:\Program Files\Carbonator``)
+Copy binaries to a directory you want application to run from. (e.g. ``C:\Program Files\Carbonator``)
+
+Note: if you intend to run Carbonator as a service, do not install it within a user profile directory (e.g. ``C:\Users\<username>\...``)
 
 ### Console Mode ###
 
