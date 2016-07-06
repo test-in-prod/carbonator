@@ -58,6 +58,7 @@
     <Compile Include="Config\PerformanceCounterElement.cs" />
     <Compile Include="CounterWatcher.cs" />
     <Compile Include="Log.cs" />
+    <Compile Include="MetricPathBuilder.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>

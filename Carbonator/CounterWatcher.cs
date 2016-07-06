@@ -16,11 +16,7 @@ namespace Crypton.Carbonator
     /// </summary>
     public class CounterWatcher : IDisposable
     {
-        /// <summary>
-        /// Defines a cache between a configured metric path and performance counter properties: Category, Name, Instance (tuple)
-        /// </summary>
-        private Dictionary<Tuple<string, string, string>, string> _metricNameCache = new Dictionary<Tuple<string, string, string>, string>();
-
+        
         /// <summary>
         /// Initialised list of counters
         /// </summary>
@@ -137,7 +133,7 @@ namespace Crypton.Carbonator
             // sample each counter we have values for
             foreach (var counter in _counters)
             {
-                string path = FormatMetricPath(counter, MetricPath);
+                string path = (new MetricPathBuilder(counter, MetricPath)).Format();
                 try
                 {
                     float value = counter.NextValue();
@@ -153,94 +149,7 @@ namespace Crypton.Carbonator
                 }
             }
         }
-
-        private string formatMetricPathCached(PerformanceCounter counter, string configuredPath)
-        {
-            var counterMetricTuple = new Tuple<string, string, string>(counter.CategoryName, counter.CounterName, counter.InstanceName);
-            // Original idea by @msmpeteclark in PR#4
-            if (!_metricNameCache.ContainsKey(counterMetricTuple))
-            {
-                string path = FormatMetricPath(counter, configuredPath);
-                _metricNameCache.Add(counterMetricTuple, path);
-                return path;
-            }
-            else
-            {
-                return _metricNameCache[counterMetricTuple];
-            }
-        }
-
-        /// <summary>
-        /// Returns final carbon/graphite metric path based on a given PerformanceCounter and configured metric path
-        /// </summary>
-        /// <param name="counter"></param>
-        /// <param name="configuredPath"></param>
-        /// <returns></returns>
-        public static string FormatMetricPath(PerformanceCounter counter, string configuredPath)
-        {
-            string finalPath = configuredPath;
-
-            // map counter variables
-            finalPath = finalPath
-                .Replace("%COUNTER_CATEGORY%", replaceInvalidCharsInMetricPath(counter.CategoryName))
-                .Replace("%COUNTER_NAME%", replaceInvalidCharsInMetricPath(counter.CounterName))
-                .Replace("%COUNTER_INSTANCE%", replaceInvalidCharsInMetricPath(counter.InstanceName));
-
-            // Original idea by @msmpeteclark in PR#4
-            // map environment variables
-            foreach (DictionaryEntry envPair in Environment.GetEnvironmentVariables())
-            {
-                string key = envPair.Key.ToString().ToUpper();
-                string value = replaceInvalidCharsInMetricPath(envPair.Value.ToString());
-
-                finalPath = finalPath.Replace(string.Format("%{0}%", key), value);
-            }
-
-            // preserve existing known variables
-            // NOTE: these would already be replaced if they are system environment variables                
-            finalPath = finalPath
-                .Replace("%HOST%", Environment.MachineName)
-                .Replace("%host%", Environment.MachineName.ToLowerInvariant())
-                .Replace("%DOMAIN%", resolveDomainName());
-
-            return finalPath;
-        }
-
-        /// <summary>
-        /// Replaces characters that would not be valid in a carbon/graphite metric path
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private static string replaceInvalidCharsInMetricPath(string input, char replacementChar = '_')
-        {
-            if (string.IsNullOrEmpty(input))
-                return replacementChar.ToString(); // return just the character if input is null
-            return new Regex(@"\W").Replace(input, replacementChar.ToString());
-        }
-
-        /// <summary>
-        /// Resolve computer domain name for %DOMAIN% variable, suggested by @GriffReborn in #6
-        /// </summary>
-        /// <returns></returns>
-        private static string resolveDomainName()
-        {
-            // try with Active Directory first
-            string domain = null;
-            try
-            {
-                var adDomain = Domain.GetComputerDomain();
-                domain = adDomain.Name;
-            }
-            catch (ActiveDirectoryObjectNotFoundException)
-            {
-                // this may be thrown on a workgroup-only machine (e.g. not on a domain)
-                // therefore, use user's domain name, which would just include the computer name
-                domain = Environment.UserDomainName;
-                Log.Debug("[CounterWatcher/resolveDomainName] unable to use A/D, using UserDomainName: {0}", domain);
-            }
-            return domain;
-        }
-
+        
         /// <summary>
         /// Disposes this CounterWatcher instance and releases performance counters loaded by it
         /// </summary>
@@ -251,7 +160,6 @@ namespace Crypton.Carbonator
                 counter.Dispose();
             }
             _counters.Clear();
-            _metricNameCache.Clear();
         }
     }
 }
