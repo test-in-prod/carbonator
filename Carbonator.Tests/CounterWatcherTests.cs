@@ -33,8 +33,26 @@ namespace Carbonator.Tests
                 watcher.Report(metrics);
             }
             sw.Stop();
-            
-            
+        }
+
+        [TestMethod]
+        public void TestFindInstanceNetworkCardRegex()
+        {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
+            CounterWatcher watcher = new CounterWatcher();
+            watcher.MetricPath = "PerfMon.MES.%HOST%.NetworkAdapter.BytesTotalSec.%COUNTER_INSTANCE%";
+            watcher.CategoryName = "Network Interface";
+            watcher.CounterName = "Bytes Total/sec";
+            watcher.InstanceNames = @".*^((?!.*6to4.*)(?!.*Local.*)(?!.*WAN.*)(?!.*isatap.*)(?!.*Kernel.*)(?!.*Test.*)).*(\n)";
+            watcher.Initialize();
+
+            List<CollectedMetric> metrics = new List<CollectedMetric>();
+            watcher.Report(metrics);
+            Thread.Sleep(2000);
+            watcher.Report(metrics);
+
 
         }
     }
