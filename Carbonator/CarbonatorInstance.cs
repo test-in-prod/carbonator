@@ -199,7 +199,7 @@ namespace Crypton.Carbonator
                     string metricStr = metric.ToString();
                     // see http://graphite.readthedocs.org/en/latest/feeding-carbon.html
                     Log.Debug("[reportMetrics] reporting: {0}", metricStr.Substring(0, metricStr.Length - 1)); // the Length-1 is to remove the newline at the end for nicer log
-                    byte[] bytes = Encoding.ASCII.GetBytes(conf.Graphite.Prefix + metricStr);
+                    byte[] bytes = Encoding.ASCII.GetBytes(metricStr);
                     try
                     {
                         ns.Write(bytes, 0, bytes.Length);
