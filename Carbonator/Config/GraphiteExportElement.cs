@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
+﻿using System.Configuration;
 
 namespace Crypton.Carbonator.Config
 {
@@ -30,6 +26,16 @@ namespace Crypton.Carbonator.Config
         {
             get { return (int)base["port"]; }
             set { base["port"] = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets prefix that added to each metric sent to Graphite server
+        /// </summary>
+        [ConfigurationProperty("prefix", IsRequired = false, DefaultValue = "")]
+        public string Prefix
+        {
+            get { return (string)base["prefix"]; }
+            set { base["prefix"] = value; }
         }
 
     }

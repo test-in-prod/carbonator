@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.DirectoryServices.ActiveDirectory;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Crypton.Carbonator
@@ -84,6 +81,11 @@ namespace Crypton.Carbonator
         }
 
         /// <summary>
+        /// The prefix to add to each metric
+        /// </summary>
+        private string Prefix;
+
+        /// <summary>
         /// Creates a new instance of MetricPathBuilder
         /// </summary>
         public MetricPathBuilder()
@@ -93,6 +95,12 @@ namespace Crypton.Carbonator
             // set defaults
             Domain = cachedDomainName ?? (cachedDomainName = ResolveDomainName()); // resolve & cache the domain name
             Host = Environment.MachineName;
+            var conf = Config.CarbonatorSection.Current;
+
+            if (conf != null)
+            {
+                Prefix = conf.Graphite.Prefix;
+            }
         }
 
         /// <summary>
@@ -139,6 +147,12 @@ namespace Crypton.Carbonator
             {
                 template = template.Replace("%" + key + "%", ReplaceInvalidCharactersInPath(Variables[key]));
             }
+
+            if (!string.IsNullOrEmpty(Prefix))
+            {
+                template = Prefix + template;
+            }
+
             return template;
         }
 
