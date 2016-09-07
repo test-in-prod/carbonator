@@ -54,6 +54,7 @@
     <Compile Include="CollectedMetric.cs" />
     <Compile Include="Config\CarbonatorSection.cs" />
     <Compile Include="Config\GraphiteExportElement.cs" />
+    <Compile Include="Config\InfluxDbOutputElement.cs" />
     <Compile Include="Config\PerformanceCounterCollection.cs" />
     <Compile Include="Config\PerformanceCounterElement.cs" />
     <Compile Include="CounterWatcher.cs" />
@@ -75,7 +76,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="install-service.cmd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
