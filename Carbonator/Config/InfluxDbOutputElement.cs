@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Crypton.Carbonator.Config
 {
-    public class InfluxDbOutputElement : OutputElement
+    public class InfluxDbOutputElement : ConfigurationElement
     {
 
         [ConfigurationProperty("postingUrl", IsKey = false, IsRequired = true)]

@@ -33,14 +33,7 @@ namespace Crypton.Carbonator.Config
             get { return (GraphiteExportElement)base["graphite"]; }
             set { base["graphite"] = value; }
         }
-
-        [ConfigurationProperty("output", IsRequired = true)]
-        public OutputElementCollection Output
-        {
-            get { return (OutputElementCollection)base["output"]; }
-            set { base["output"] = value; }
-        }
-
+        
         /// <summary>
         /// Gets the configured performance counters
         /// </summary>

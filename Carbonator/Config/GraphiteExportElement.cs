@@ -38,5 +38,25 @@ namespace Crypton.Carbonator.Config
             set { base["prefix"] = value; }
         }
 
+        /// <summary>
+        /// How often metrics are reported to graphite, in seconds
+        /// </summary>
+        [ConfigurationProperty("reportingInterval", IsRequired = false, DefaultValue = 5)]
+        public int ReportingIntervalSeconds
+        {
+            get { return (int)base["reportingInterval"]; }
+            set { base["reportingInterval"] = value; }
+        }
+
+        /// <summary>
+        /// How many metrics will be kept in the buffer before no new metrics will be accepted
+        /// </summary>
+        [ConfigurationProperty("bufferSize", IsRequired = false, DefaultValue = 2000)]
+        public int BufferSize
+        {
+            get { return (int)base["bufferSize"]; }
+            set { base["bufferSize"] = value; }
+        }
+
     }
 }
