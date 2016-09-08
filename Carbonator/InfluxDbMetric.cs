@@ -43,7 +43,7 @@ namespace Crypton.Carbonator
             Prefix = source.Template;
             ValueName = !string.IsNullOrWhiteSpace(source.Instance) ? source.Instance : "value";
             Value = source.Value;
-            Timestamp = (long)((DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds * 1000 * 1000);
+            Timestamp = (long)((source.Timestamp - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds * 1000 * 1000);
         }
 
         /// <summary>
