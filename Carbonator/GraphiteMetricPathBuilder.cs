@@ -9,7 +9,7 @@ namespace Crypton.Carbonator
     /// <summary>
     /// Builds a metric path
     /// </summary>
-    public class MetricPathBuilder
+    public class GraphiteMetricPathBuilder
     {
 
         /// <summary>
@@ -20,7 +20,7 @@ namespace Crypton.Carbonator
         /// <summary>
         /// Gets or sets configured path template
         /// </summary>
-        public string PathTemplate
+        public string Template
         {
             get;
             set;
@@ -88,7 +88,7 @@ namespace Crypton.Carbonator
         /// <summary>
         /// Creates a new instance of MetricPathBuilder
         /// </summary>
-        public MetricPathBuilder()
+        public GraphiteMetricPathBuilder()
         {
             Variables = new NameValueCollection();
 
@@ -106,17 +106,17 @@ namespace Crypton.Carbonator
         /// <summary>
         /// Creates a new instance of MetricPathBuilder with a path template
         /// </summary>
-        /// <param name="pathTemplate"></param>
-        public MetricPathBuilder(string pathTemplate) : this()
+        /// <param name="template"></param>
+        public GraphiteMetricPathBuilder(string template) : this()
         {
-            PathTemplate = pathTemplate;
+            Template = template;
         }
 
         /// <summary>
         /// Creates a MetricPathBuilder with values from specified performance counter
         /// </summary>
         /// <param name="counter"></param>
-        public MetricPathBuilder(PerformanceCounter counter) : this()
+        public GraphiteMetricPathBuilder(PerformanceCounter counter) : this()
         {
             CounterName = counter.CounterName;
             CategoryName = counter.CategoryName;
@@ -127,9 +127,9 @@ namespace Crypton.Carbonator
         /// Creates a MetricPathBuilder with values from specified performance counter with a path template
         /// </summary>
         /// <param name="counter"></param
-        public MetricPathBuilder(PerformanceCounter counter, string pathTemplate) : this(counter)
+        public GraphiteMetricPathBuilder(PerformanceCounter counter, string pathTemplate) : this(counter)
         {
-            PathTemplate = pathTemplate;
+            Template = pathTemplate;
         }
 
         /// <summary>
@@ -138,11 +138,11 @@ namespace Crypton.Carbonator
         /// <returns></returns>
         public string Format()
         {
-            if (string.IsNullOrEmpty(PathTemplate))
+            if (string.IsNullOrEmpty(Template))
             {
                 throw new InvalidOperationException("PathTemplate property is null");
             }
-            string template = PathTemplate;
+            string template = Template;
             foreach (string key in Variables.Keys)
             {
                 template = template.Replace("%" + key + "%", ReplaceInvalidCharactersInPath(Variables[key]));

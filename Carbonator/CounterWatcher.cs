@@ -16,7 +16,7 @@ namespace Crypton.Carbonator
     /// </summary>
     public class CounterWatcher : IDisposable
     {
-        
+
         /// <summary>
         /// Initialised list of counters
         /// </summary>
@@ -69,7 +69,7 @@ namespace Crypton.Carbonator
         /// <param name="configurationElement"></param>
         public CounterWatcher(Config.PerformanceCounterElement configurationElement)
         {
-            this.MetricPath = configurationElement.Path;
+            this.MetricPath = configurationElement.Template;
             this.CategoryName = configurationElement.CategoryName;
             this.CounterName = configurationElement.CounterName;
             this.InstanceNames = configurationElement.InstanceName;
@@ -133,14 +133,11 @@ namespace Crypton.Carbonator
             // sample each counter we have values for
             foreach (var counter in _counters)
             {
-                string path = (new MetricPathBuilder(counter, MetricPath)).Format();
                 try
                 {
-                    float value = counter.NextValue();
-                    CollectedMetric metric = new CollectedMetric(path, value);
+                    var value = counter.NextValue();
+                    var metric = new CollectedMetric(MetricPath, counter.CategoryName, counter.CounterName, value, counter.InstanceName);
                     metrics.Add(metric);
-
-                    Log.Debug("[CounterWatcher/Report] collected {0}/{1}{2} for path {3}: {4}", counter.CategoryName, counter.CounterName, counter.InstanceName, path, value);
                 }
                 catch
                 {
@@ -149,7 +146,7 @@ namespace Crypton.Carbonator
                 }
             }
         }
-        
+
         /// <summary>
         /// Disposes this CounterWatcher instance and releases performance counters loaded by it
         /// </summary>

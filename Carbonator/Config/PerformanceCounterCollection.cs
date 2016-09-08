@@ -15,7 +15,7 @@ namespace Crypton.Carbonator.Config
 
         protected override object GetElementKey(ConfigurationElement element)
         {
-            return (element as PerformanceCounterElement).Path;
+            return (element as PerformanceCounterElement).Template;
         }
     }
 }

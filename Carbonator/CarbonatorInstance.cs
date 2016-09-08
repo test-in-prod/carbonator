@@ -17,11 +17,11 @@ namespace Crypton.Carbonator
     /// </summary>
     internal static class CarbonatorInstance
     {
-        
-        private static Timer _metricCollectorTimer = null;
+
+        private static Timer metricCollectorTimer = null;
         private static List<CounterWatcher> _watchers = new List<CounterWatcher>();
 
-        static GraphiteClient graphiteClient = null;
+        static IOutputClient outputClient = null;
 
         private static bool _started = false;
         private static Config.CarbonatorSection conf = null;
@@ -52,7 +52,7 @@ namespace Crypton.Carbonator
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
             Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
-            
+
             // load counter watchers that will actually collect metrics for us
             foreach (Config.PerformanceCounterElement counterConfig in Config.CarbonatorSection.Current.Counters)
             {
@@ -63,17 +63,38 @@ namespace Crypton.Carbonator
                 }
                 catch (Exception any)
                 {
-                    Log.Error("[StartCollection] Failed to initialize performance counter watcher for path '{0}'; this configuration element will be skipped: {1} (inner: {2})", counterConfig.Path, any.Message, any.InnerException != null ? any.InnerException.Message : "(null)");
+                    Log.Error("[StartCollection] Failed to initialize performance counter watcher for path '{0}'; this configuration element will be skipped: {1} (inner: {2})", counterConfig.Template, any.Message, any.InnerException != null ? any.InnerException.Message : "(null)");
                     continue;
                 }
                 _watchers.Add(watcher);
             }
 
             // start collection and reporting timers
-            _metricCollectorTimer = new Timer(collectMetrics, new StateControl(), conf.CollectionInterval, conf.CollectionInterval);
+            metricCollectorTimer = new Timer(collectMetrics, new StateControl(), conf.CollectionInterval, conf.CollectionInterval);
 
-            graphiteClient = new Carbonator.GraphiteClient(conf.Graphite);
-            graphiteClient.Start();
+            // start output client
+            var configuredName = Config.CarbonatorSection.Current.Output.DefaultOutput;
+            foreach (Config.OutputElementCollection.OutputElementProxy proxy in Config.CarbonatorSection.Current.Output)
+            {
+                if (proxy.Entry.Name == configuredName)
+                {
+                    switch (proxy.Entry.Type)
+                    {
+                        case "graphite":
+                            outputClient = new GraphiteClient(proxy.Entry as Config.GraphiteOutputElement);
+                            break;
+                        case "influxdb":
+                            outputClient = new InfluxDbClient(proxy.Entry as Config.InfluxDbOutputElement);
+                            break;
+                    }
+                    outputClient.Start();
+                }
+            }
+
+            if (outputClient == null)
+            {
+                throw new InvalidOperationException("No output client is configured, check <output> configuration");
+            }
 
             Log.Info("[StartCollection] Carbonator service loaded {0} watchers", _watchers.Count);
         }
@@ -87,9 +108,9 @@ namespace Crypton.Carbonator
                 return;
             _started = false;
 
-            _metricCollectorTimer.Dispose();
-            graphiteClient.Dispose();
-            
+            metricCollectorTimer.Dispose();
+            outputClient.Dispose();
+
             foreach (var watcher in _watchers)
             {
                 watcher.Dispose();
@@ -132,7 +153,7 @@ namespace Crypton.Carbonator
             // transfer metrics over for sending
             foreach (var item in metrics)
             {
-                if (!graphiteClient.TryAdd(item))
+                if (!outputClient.TryAdd(item))
                 {
                     Log.Warning("[collectMetrics] Failed to relocate collected metrics to buffer for sending, buffer may be full; increase metric buffer in configuration");
                 }
@@ -140,6 +161,6 @@ namespace Crypton.Carbonator
 
             control.IsRunning = false;
         }
-        
+
     }
 }

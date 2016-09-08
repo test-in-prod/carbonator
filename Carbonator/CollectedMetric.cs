@@ -11,42 +11,44 @@ namespace Crypton.Carbonator
     /// <summary>
     /// Defines a structure for collected metric
     /// </summary>
-    [DebuggerDisplay("Path={Path} Value={Value}")]
     public struct CollectedMetric
     {
 
         public static readonly DateTime Epoch = DateTime.SpecifyKind(new DateTime(1970, 1, 1), DateTimeKind.Utc);
 
+        public string Template;
+
         /// <summary>
-        /// Gets metric path
+        /// Gets or sets counter category from which metric was read
         /// </summary>
-        public string Path;
+        public string Category;
+
+        /// <summary>
+        /// Gets or sets counter name from which metric was read
+        /// </summary>
+        public string Name;
+
+        /// <summary>
+        /// Gets or sets counter instance from which metric was read
+        /// </summary>
+        public string Instance;
 
         /// <summary>
         /// Gets metric value
         /// </summary>
         public float Value;
 
-        /// <summary>
-        /// Gets UNIX timestamp of when metric was samples (UTC)
-        /// </summary>
-        public int Timestamp;
+        public DateTime Timestamp;
 
-        public CollectedMetric(string path, float value)
+        public CollectedMetric(string template, string category, string name, float value, string instance = null)
         {
-            this.Path = path;
-            this.Value = value;
-            this.Timestamp = (int)(DateTime.UtcNow - Epoch).TotalSeconds;
+            Template = template;
+            Category = category;
+            Name = name;
+            Value = value;
+            Instance = instance;
+            Timestamp = DateTime.UtcNow;
         }
-
-        /// <summary>
-        /// Gets metric message ready to be sent to Graphite/Carbon
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            return string.Format(CultureInfo.InvariantCulture, "{0} {1:0.000} {2}\n", Path, Value, Timestamp);
-        }
-
+        
     }
 }

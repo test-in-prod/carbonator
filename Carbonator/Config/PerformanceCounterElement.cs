@@ -13,13 +13,13 @@ namespace Crypton.Carbonator.Config
     {
 
         /// <summary>
-        /// Gets or sets the Carbon namespace path for this reported counter. Also acts as unique key for configuration
+        /// Gets or sets the template that will be used to report on the counter
         /// </summary>
-        [ConfigurationProperty("path", IsKey = true, IsRequired = true)]
-        public string Path
+        [ConfigurationProperty("template", IsKey = true, IsRequired = true)]
+        public string Template
         {
-            get { return (string)base["path"]; }
-            set { base["path"] = value; }
+            get { return (string)base["template"]; }
+            set { base["template"] = value; }
         }
 
         /// <summary>

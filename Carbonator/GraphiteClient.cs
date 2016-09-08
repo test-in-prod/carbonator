@@ -13,11 +13,11 @@ namespace Crypton.Carbonator
     /// <summary>
     /// Represents a stateful connection to the graphite server
     /// </summary>
-    public class GraphiteClient : IDisposable
+    public class GraphiteClient : IOutputClient
     {
 
         TcpClient tcpClient = null;
-        GraphiteExportElement config = null;
+        GraphiteOutputElement config = null;
         Timer metricReportingTimer = null;
         StateControl stateControl = new StateControl();
         BlockingCollection<CollectedMetric> metricsBuffer = null;
@@ -37,7 +37,7 @@ namespace Crypton.Carbonator
             }
         }
 
-        public GraphiteClient(GraphiteExportElement configuration)
+        public GraphiteClient(GraphiteOutputElement configuration)
         {
             config = configuration;
             metricsBuffer = new BlockingCollection<CollectedMetric>(config.BufferSize);
@@ -76,13 +76,13 @@ namespace Crypton.Carbonator
 
             try
             {
+                state.IsRunning = true;
+
                 // reconnect automatically
-                if (!Connected)
+                if (!Connected && state.Run)
                 {
-                    int reconnectInterval = 100;
+                    int reconnectInterval = config.ReconnectIntervalStep;
                     bool reconnect = false;
-                    const int reconnectMaxInterval = 30000; // max time in MS that reconnectInterval can reach
-                    const int reconnectStepInterval = 1000; // how much reconnect interval gets increased each time
                     do
                     {
                         try
@@ -92,37 +92,38 @@ namespace Crypton.Carbonator
                         }
                         catch (Exception any)
                         {
-                            Log.Error("[reportMetrics] Unable to connect to graphite server (retrying after {1}ms): {0}", any.Message, reconnectInterval);
-                            reconnectInterval = reconnectInterval + reconnectStepInterval < reconnectMaxInterval ? reconnectInterval + reconnectStepInterval : reconnectMaxInterval;
+                            Log.Error($"[{nameof(reportMetricsAsync)}] Unable to connect to graphite server (retrying after {reconnectInterval}ms): {any.Message}");
+                            reconnectInterval = 
+                                reconnectInterval + config.ReconnectIntervalStep < config.ReconnectIntervalMax ? reconnectInterval + config.ReconnectIntervalStep : config.ReconnectIntervalMax;
                             Thread.Sleep(reconnectInterval);
                             reconnect = true;
                         }
                     } while (reconnect && state.Run);
                 }
 
-                if (Connected)
+                if (Connected && state.Run)
                 {
                     NetworkStream ns = tcpClient.GetStream();
                     CollectedMetric metric;
-                    while (metricsBuffer.TryTake(out metric, 100) && Connected)
+                    while (metricsBuffer.TryTake(out metric, 100) && Connected && state.Run)
                     {
-                        string metricStr = metric.ToString();
+                        var graphiteMetric = new GraphiteMetric(metric);
+
                         // see http://graphite.readthedocs.org/en/latest/feeding-carbon.html
-                        Log.Debug("[reportMetrics] reporting: {0}", metricStr.Substring(0, metricStr.Length - 1)); // the Length-1 is to remove the newline at the end for nicer log
-                        byte[] bytes = Encoding.ASCII.GetBytes(metricStr);
+                        byte[] bytes = Encoding.ASCII.GetBytes(graphiteMetric.ToString());
                         try
                         {
                             ns.Write(bytes, 0, bytes.Length);
                         }
                         catch (Exception any)
                         {
-                            Log.Error("[reportMetrics] Failed to transmit metric {0} to configured graphite server: {1}", metric.Path, any.Message);
+                            Log.Error("[reportMetrics] Failed to transmit metric {0} to configured graphite server: {1}", metric.Template, any.Message);
                             // put metric back into the queue
                             // metric will be lost if this times out
                             // the TryAdd will block until timeout if the buffer is full for example
                             if (!metricsBuffer.TryAdd(metric, 100))
                             {
-                                Log.Error("[reportMetrics] Metric buffer may be full, consider increasing the metric buffer or determine if carbon server is reachable", metric.Path, any.Message);
+                                Log.Error("[reportMetrics] Metric buffer may be full, consider increasing the metric buffer or determine if carbon server is reachable", graphiteMetric.Path, any.Message);
                             }
                         }
                     }

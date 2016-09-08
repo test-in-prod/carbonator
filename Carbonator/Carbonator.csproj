@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Crypton.Carbonator</RootNamespace>
     <AssemblyName>Crypton.Carbonator</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -21,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -30,6 +32,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
@@ -42,6 +45,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.Management" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -53,14 +57,19 @@
     <Compile Include="CarbonatorInstance.cs" />
     <Compile Include="CollectedMetric.cs" />
     <Compile Include="Config\CarbonatorSection.cs" />
-    <Compile Include="Config\GraphiteExportElement.cs" />
+    <Compile Include="Config\GraphiteOutputElement.cs" />
     <Compile Include="Config\InfluxDbOutputElement.cs" />
+    <Compile Include="Config\OutputElement.cs" />
+    <Compile Include="Config\OutputElementCollection.cs" />
     <Compile Include="Config\PerformanceCounterCollection.cs" />
     <Compile Include="Config\PerformanceCounterElement.cs" />
     <Compile Include="CounterWatcher.cs" />
     <Compile Include="GraphiteClient.cs" />
+    <Compile Include="GraphiteMetric.cs" />
+    <Compile Include="InfluxDbClient.cs" />
+    <Compile Include="IOutputClient.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="MetricPathBuilder.cs" />
+    <Compile Include="GraphiteMetricPathBuilder.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>

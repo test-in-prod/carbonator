@@ -27,13 +27,20 @@ namespace Crypton.Carbonator.Config
         /// <summary>
         /// Gets Graphite server settings
         /// </summary>
-        [ConfigurationProperty("graphite", IsRequired = true)]
-        public GraphiteExportElement Graphite
+        [ConfigurationProperty("graphite", IsRequired = false)]
+        public GraphiteOutputElement Graphite
         {
-            get { return (GraphiteExportElement)base["graphite"]; }
+            get { return (GraphiteOutputElement)base["graphite"]; }
             set { base["graphite"] = value; }
         }
-        
+
+        [ConfigurationProperty("output", IsRequired = true)]
+        public OutputElementCollection Output
+        {
+            get { return (OutputElementCollection)base["output"]; }
+            set { base["output"] = value; }
+        }
+
         /// <summary>
         /// Gets the configured performance counters
         /// </summary>

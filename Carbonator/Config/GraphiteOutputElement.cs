@@ -5,7 +5,7 @@ namespace Crypton.Carbonator.Config
     /// <summary>
     /// Defines configuration properties for exporting data to Graphite
     /// </summary>
-    public class GraphiteExportElement : ConfigurationElement
+    public class GraphiteOutputElement : OutputElement
     {
 
         /// <summary>
@@ -51,11 +51,31 @@ namespace Crypton.Carbonator.Config
         /// <summary>
         /// How many metrics will be kept in the buffer before no new metrics will be accepted
         /// </summary>
-        [ConfigurationProperty("bufferSize", IsRequired = false, DefaultValue = 2000)]
+        [ConfigurationProperty("bufferSize", IsRequired = false, DefaultValue = 5000)]
         public int BufferSize
         {
             get { return (int)base["bufferSize"]; }
             set { base["bufferSize"] = value; }
+        }
+        
+        /// <summary>
+        /// Maximum time, in milliseconds, that Carbonator will try to reconnect to the target Graphite server
+        /// </summary>
+        [ConfigurationProperty("reconnectIntervalMax", IsRequired = false, DefaultValue = 30000)]
+        public int ReconnectIntervalMax
+        {
+            get { return (int)base["reconnectIntervalMax"]; }
+            set { base["reconnectIntervalMax"] = value; }
+        }
+
+        /// <summary>
+        /// Incremental reconnect interval that Carbonator will use to try reconnecting to Graphite server
+        /// </summary>
+        [ConfigurationProperty("reconnectIntervalStep", IsRequired = false, DefaultValue = 1000)]
+        public int ReconnectIntervalStep
+        {
+            get { return (int)base["reconnectIntervalStep"]; }
+            set { base["reconnectIntervalStep"] = value; }
         }
 
     }
