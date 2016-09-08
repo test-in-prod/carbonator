@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -26,6 +28,7 @@ namespace Crypton.Carbonator
         public InfluxDbClient(Config.InfluxDbOutputElement configuration)
         {
             config = configuration;
+            metricsBuffer = new BlockingCollection<CollectedMetric>(configuration.BufferSize);
         }
 
 
@@ -38,7 +41,10 @@ namespace Crypton.Carbonator
 
         public bool TryAdd(CollectedMetric metric)
         {
-            throw new NotImplementedException();
+            if (metricsBuffer != null)
+                return metricsBuffer.TryAdd(metric);
+            else
+                return false;
         }
 
         private void reportMetricsAsync(object stateObj)
@@ -67,27 +73,36 @@ namespace Crypton.Carbonator
                         }
 
                         // build line protocol syntax batch (https://docs.influxdata.com/influxdb/v0.13/write_protocols/write_syntax/)
-                        var batchString = new StringBuilder();
-                        foreach (var metric in batch)
+                        using (var batchString = new StringWriter())
                         {
-                            batchString.AppendLine($"measurement,tagKey=tagValue value=12,otherval=32 12313213121");
-                        }
-
-                        batch = null;
-
-                        using (var httpClient = new HttpClient())
-                        {
-                            httpClient.Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds);
-                            using (var message = new HttpRequestMessage())
+                            batchString.NewLine = "\n";
+                            foreach (var metric in batch)
                             {
-                                message.RequestUri = new Uri(config.PostingUrl);
-                                message.Method = HttpMethod.Post;
-                                message.Content = new StringContent(batchString.ToString());
+                                var influxDbMetric = new InfluxDbMetric(metric);
+                                batchString.WriteLine(influxDbMetric);
+                            }
 
-                                var task = httpClient.SendAsync(message);
-                                if (task.Wait(TimeSpan.FromSeconds(config.TimeoutSeconds)))
+                            batch = null;
+
+                            using (var httpClient = new HttpClient())
+                            {
+                                httpClient.Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds);
+                                using (var message = new HttpRequestMessage())
                                 {
-                                    // TODO: check result
+                                    message.RequestUri = new Uri(config.PostingUrl);
+                                    message.Method = HttpMethod.Post;
+                                    message.Content = new StringContent(batchString.ToString());
+
+                                    var task = httpClient.SendAsync(message);
+                                    if (task.Wait(TimeSpan.FromSeconds(config.TimeoutSeconds)))
+                                    {
+                                        var result = task.Result;
+                                        if (result.StatusCode != HttpStatusCode.NoContent)
+                                        {
+                                            string responseText = result.Content.ReadAsStringAsync().Result;
+                                            Log.Warning($"[{nameof(reportMetricsAsync)}] response from influxdb {result.StatusCode} {result.ReasonPhrase} -> {responseText}");
+                                        }
+                                    }
                                 }
                             }
                         }

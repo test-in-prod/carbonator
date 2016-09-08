@@ -67,6 +67,7 @@
     <Compile Include="GraphiteClient.cs" />
     <Compile Include="GraphiteMetric.cs" />
     <Compile Include="InfluxDbClient.cs" />
+    <Compile Include="InfluxDbMetric.cs" />
     <Compile Include="IOutputClient.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="GraphiteMetricPathBuilder.cs" />
@@ -84,6 +85,7 @@
     <Compile Include="ServiceMode.Designer.cs">
       <DependentUpon>ServiceMode.cs</DependentUpon>
     </Compile>
+    <Compile Include="TemplateValueProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

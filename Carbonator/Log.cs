@@ -102,25 +102,34 @@ namespace Crypton.Carbonator
         /// Writes a warning entry to the log
         /// </summary>
         /// <param name="message"></param>
-        /// <param name="args"></param>
-        public static void Warning(string message, params object[] args)
+        public static void Warning(string message)
         {
-            string formatted = string.Format(message, args);
             switch (type)
             {
                 case Types.EventLog:
-                    EventLog.WriteEntry(Program.EVENT_SOURCE, formatted, EventLogEntryType.Warning);
+                    EventLog.WriteEntry(Program.EVENT_SOURCE, message, EventLogEntryType.Warning);
                     break;
                 case Types.Log4Net:
-                    log4net.Warn(formatted);
+                    log4net.Warn(message);
                     break;
             }
 
             if (Program.ConsoleMode && Program.Verbose)
             {
-                Console.WriteLine("[warn] " + formatted);
-                System.Diagnostics.Debug.WriteLine(formatted);
+                Console.WriteLine("[warn] " + message);
+                System.Diagnostics.Debug.WriteLine(message);
             }
+        }
+
+        /// <summary>
+        /// Writes a warning entry to the log
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="args"></param>
+        public static void Warning(string message, params object[] args)
+        {
+            string formatted = string.Format(message, args);
+            Warning(formatted);
         }
 
         /// <summary>

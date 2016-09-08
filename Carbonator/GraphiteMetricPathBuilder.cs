@@ -54,32 +54,14 @@ namespace Crypton.Carbonator
         }
 
         /// <summary>
-        /// Gets or sets computer domain name for %DOMAIN% variable
-        /// </summary>
-        public string Domain
-        {
-            get { return Variables["DOMAIN"]; }
-            set { Variables["DOMAIN"] = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets hostname variable - %HOST%
-        /// </summary>
-        public string Host
-        {
-            get { return Variables["HOST"]; }
-            set { Variables["HOST"] = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets variables to be applied for PathTemplate
+        /// Gets a collection of variables for building a path
         /// </summary>
         public NameValueCollection Variables
         {
             get;
-            set;
+            private set;
         }
-
+        
         /// <summary>
         /// The prefix to add to each metric
         /// </summary>
@@ -90,11 +72,8 @@ namespace Crypton.Carbonator
         /// </summary>
         public GraphiteMetricPathBuilder()
         {
-            Variables = new NameValueCollection();
-
-            // set defaults
-            Domain = cachedDomainName ?? (cachedDomainName = ResolveDomainName()); // resolve & cache the domain name
-            Host = Environment.MachineName;
+            Variables = TemplateValueProvider.GetDefaults();
+            
             var conf = Config.CarbonatorSection.Current;
 
             if (conf != null)
@@ -138,15 +117,7 @@ namespace Crypton.Carbonator
         /// <returns></returns>
         public string Format()
         {
-            if (string.IsNullOrEmpty(Template))
-            {
-                throw new InvalidOperationException("PathTemplate property is null");
-            }
-            string template = Template;
-            foreach (string key in Variables.Keys)
-            {
-                template = template.Replace("%" + key + "%", ReplaceInvalidCharactersInPath(Variables[key]));
-            }
+            var template = TemplateValueProvider.Format(Template, Variables, (value) => { return ReplaceInvalidCharactersInPath(value); });
 
             if (!string.IsNullOrEmpty(Prefix))
             {
@@ -168,28 +139,6 @@ namespace Crypton.Carbonator
             return new Regex(@"\W").Replace(input, replacementChar.ToString());
         }
 
-        /// <summary>
-        /// Resolves computer domain name via Active Directory
-        /// </summary>
-        /// <returns></returns>
-        public static string ResolveDomainName()
-        {
-            // try with Active Directory first
-            string domain = null;
-            try
-            {
-                var adDomain = System.DirectoryServices.ActiveDirectory.Domain.GetComputerDomain();
-                domain = adDomain.Name;
-            }
-            catch (ActiveDirectoryObjectNotFoundException)
-            {
-                // this may be thrown on a workgroup-only machine (e.g. not on a domain)
-                // therefore, use user's domain name, which would just include the computer name
-                domain = Environment.UserDomainName;
-                Log.Debug("[MetricPathBuilder/ResolveDomainName] unable to use A/D, using UserDomainName: {0}", domain);
-            }
-            return domain;
-        }
-
+        
     }
 }

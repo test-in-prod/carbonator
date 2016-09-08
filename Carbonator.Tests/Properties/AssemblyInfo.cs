@@ -8,9 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Carbonator.Tests")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Starbucks Coffee Company")]
 [assembly: AssemblyProduct("Carbonator.Tests")]
-[assembly: AssemblyCopyright("Copyright © Starbucks Coffee Company 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
