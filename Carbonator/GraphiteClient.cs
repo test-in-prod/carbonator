@@ -20,7 +20,7 @@ namespace Crypton.Carbonator
         GraphiteOutputElement config = null;
         Timer metricReportingTimer = null;
         StateControl stateControl = new StateControl();
-        BlockingCollection<CollectedMetric> metricsBuffer = null;
+        BlockingCollection<GraphiteMetric> metricsBuffer = null;
 
         private class StateControl
         {
@@ -40,7 +40,7 @@ namespace Crypton.Carbonator
         public GraphiteClient(GraphiteOutputElement configuration)
         {
             config = configuration;
-            metricsBuffer = new BlockingCollection<CollectedMetric>(config.BufferSize);
+            metricsBuffer = new BlockingCollection<GraphiteMetric>(config.BufferSize);
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Crypton.Carbonator
         public bool TryAdd(CollectedMetric metric)
         {
             if (metricsBuffer != null)
-                return metricsBuffer.TryAdd(metric);
+                return metricsBuffer.TryAdd(new GraphiteMetric(metric));
             else
                 return false;
         }
@@ -104,11 +104,9 @@ namespace Crypton.Carbonator
                 if (Connected && state.Run)
                 {
                     NetworkStream ns = tcpClient.GetStream();
-                    CollectedMetric metric;
-                    while (metricsBuffer.TryTake(out metric, 100) && Connected && state.Run)
+                    GraphiteMetric graphiteMetric;
+                    while (metricsBuffer.TryTake(out graphiteMetric, 100) && Connected && state.Run)
                     {
-                        var graphiteMetric = new GraphiteMetric(metric);
-
                         // see http://graphite.readthedocs.org/en/latest/feeding-carbon.html
                         byte[] bytes = Encoding.ASCII.GetBytes(graphiteMetric.ToString());
                         try
@@ -117,11 +115,11 @@ namespace Crypton.Carbonator
                         }
                         catch (Exception any)
                         {
-                            Log.Error("[reportMetrics] Failed to transmit metric {0} to configured graphite server: {1}", metric.Template, any.Message);
+                            Log.Error("[reportMetrics] Failed to transmit metric {0} to configured graphite server: {1}", graphiteMetric.Path, any.Message);
                             // put metric back into the queue
                             // metric will be lost if this times out
                             // the TryAdd will block until timeout if the buffer is full for example
-                            if (!metricsBuffer.TryAdd(metric, 100))
+                            if (!metricsBuffer.TryAdd(graphiteMetric, 100))
                             {
                                 Log.Error("[reportMetrics] Metric buffer may be full, consider increasing the metric buffer or determine if carbon server is reachable", graphiteMetric.Path, any.Message);
                             }

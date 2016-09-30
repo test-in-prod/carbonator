@@ -22,7 +22,7 @@ namespace Crypton.Carbonator.Config
         /// <summary>
         /// How many metrics will be kept in the buffer before no new metrics will be accepted
         /// </summary>
-        [ConfigurationProperty("bufferSize", IsKey = false, IsRequired = false, DefaultValue = 5000)]
+        [ConfigurationProperty("bufferSize", IsKey = false, IsRequired = false, DefaultValue = 50000)]
         public int BufferSize
         {
             get { return (int)base["bufferSize"]; }
@@ -32,7 +32,7 @@ namespace Crypton.Carbonator.Config
         /// <summary>
         /// Gets or sets the request timeout in seconds
         /// </summary>
-        [ConfigurationProperty("timeout", IsKey = false, IsRequired = false, DefaultValue = 5)]
+        [ConfigurationProperty("timeout", IsKey = false, IsRequired = false, DefaultValue = 15)]
         public int TimeoutSeconds
         {
             get { return (int)base["timeout"]; }

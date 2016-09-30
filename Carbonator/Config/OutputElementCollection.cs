@@ -47,6 +47,20 @@ namespace Crypton.Carbonator.Config
             set { base["name"] = value; }
         }
 
+        /// <summary>
+        /// Returns the current default output element configuration
+        /// </summary>
+        /// <returns></returns>
+        public OutputElement GetDefault()
+        {
+            foreach(OutputElementProxy proxy in this)
+            {
+                if (proxy.Entry.Name == DefaultOutput)
+                    return proxy.Entry;
+            }
+            throw new ConfigurationErrorsException($"Output plugin '{DefaultOutput}' is not defined in the list of outputs");
+        }
+
         protected override ConfigurationElement CreateNewElement()
         {
             return new OutputElementProxy();

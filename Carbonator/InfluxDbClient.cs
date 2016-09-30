@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Crypton.Carbonator.Config;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -10,13 +11,17 @@ using System.Threading;
 
 namespace Crypton.Carbonator
 {
+
+    /// <summary>
+    /// Handles acceptance of metrics destined for influxdb database
+    /// </summary>
     public class InfluxDbClient : IOutputClient
     {
 
-        Config.InfluxDbOutputElement config = null;
+        InfluxDbOutputElement config = null;
         Timer metricReportingTimer = null;
         StateControl stateControl = new StateControl();
-        BlockingCollection<CollectedMetric> metricsBuffer = null;
+        BlockingCollection<InfluxDbMetric> metricsBuffer = null;
 
         private class StateControl
         {
@@ -25,13 +30,19 @@ namespace Crypton.Carbonator
             public bool Run = true;
         }
 
+        /// <summary>
+        /// Creates a new instance of InfluxDbClient
+        /// </summary>
+        /// <param name="configuration"></param>
         public InfluxDbClient(Config.InfluxDbOutputElement configuration)
         {
             config = configuration;
-            metricsBuffer = new BlockingCollection<CollectedMetric>(configuration.BufferSize);
+            metricsBuffer = new BlockingCollection<InfluxDbMetric>(configuration.BufferSize);
         }
 
-
+        /// <summary>
+        /// Starts the InfluxDbClient
+        /// </summary>
         public void Start()
         {
             if (stateControl.Started)
@@ -39,10 +50,15 @@ namespace Crypton.Carbonator
             metricReportingTimer = new Timer(reportMetricsAsync, stateControl, 100, config.PostingIntervalSeconds * 1000);
         }
 
+        /// <summary>
+        /// Adds a new metric to the metric buffer for influxdb
+        /// </summary>
+        /// <param name="metric"></param>
+        /// <returns></returns>
         public bool TryAdd(CollectedMetric metric)
         {
             if (metricsBuffer != null)
-                return metricsBuffer.TryAdd(metric);
+                return metricsBuffer.TryAdd(new InfluxDbMetric(metric));
             else
                 return false;
         }
@@ -64,12 +80,12 @@ namespace Crypton.Carbonator
                     if (metricsBuffer.Count > 0)
                     {
                         // take batch of messages for sending
-                        var batch = new List<CollectedMetric>();
+                        var batch = new List<InfluxDbMetric>();
 
-                        CollectedMetric tryTake;
-                        while (metricsBuffer.TryTake(out tryTake, 100) && state.Run && batch.Count + 1 < config.MaxBatchSize)
+                        InfluxDbMetric influxDbMetric;
+                        while (metricsBuffer.TryTake(out influxDbMetric, 100) && state.Run && batch.Count + 1 < config.MaxBatchSize)
                         {
-                            batch.Add(tryTake);
+                            batch.Add(influxDbMetric);
                         }
 
                         // build line protocol syntax batch (https://docs.influxdata.com/influxdb/v0.13/write_protocols/write_syntax/)
@@ -78,7 +94,6 @@ namespace Crypton.Carbonator
                             batchString.NewLine = "\n";
                             foreach (var metric in batch)
                             {
-                                var influxDbMetric = new InfluxDbMetric(metric);
                                 batchString.WriteLine(influxDbMetric);
                             }
 

@@ -38,6 +38,9 @@ namespace Crypton.Carbonator
         /// </summary>
         public float Value;
 
+        /// <summary>
+        /// Gets the UTC date and time when metric was collected
+        /// </summary>
         public DateTime Timestamp;
 
         public CollectedMetric(string template, string category, string name, float value, string instance = null)

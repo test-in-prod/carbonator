@@ -51,7 +51,7 @@ namespace Crypton.Carbonator.Config
         /// <summary>
         /// How many metrics will be kept in the buffer before no new metrics will be accepted
         /// </summary>
-        [ConfigurationProperty("bufferSize", IsRequired = false, DefaultValue = 5000)]
+        [ConfigurationProperty("bufferSize", IsRequired = false, DefaultValue = 50000)]
         public int BufferSize
         {
             get { return (int)base["bufferSize"]; }

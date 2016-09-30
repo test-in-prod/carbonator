@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.DirectoryServices.ActiveDirectory;
 using System.Text.RegularExpressions;
+using static Crypton.Carbonator.Config.OutputElementCollection;
 
 namespace Crypton.Carbonator
 {
@@ -11,11 +13,6 @@ namespace Crypton.Carbonator
     /// </summary>
     public class GraphiteMetricPathBuilder
     {
-
-        /// <summary>
-        /// Cached Windows [Active Directory] domain name
-        /// </summary>
-        private static string cachedDomainName = null;
 
         /// <summary>
         /// Gets or sets configured path template
@@ -61,7 +58,7 @@ namespace Crypton.Carbonator
             get;
             private set;
         }
-        
+
         /// <summary>
         /// The prefix to add to each metric
         /// </summary>
@@ -73,12 +70,16 @@ namespace Crypton.Carbonator
         public GraphiteMetricPathBuilder()
         {
             Variables = TemplateValueProvider.GetDefaults();
-            
-            var conf = Config.CarbonatorSection.Current;
 
-            if (conf != null)
+            var conf = Config.CarbonatorSection.Current;
+            var graphiteOutput = conf.Output.GetDefault();
+            if (graphiteOutput != null && graphiteOutput is Config.GraphiteOutputElement)
             {
-                Prefix = conf.Graphite.Prefix;
+                Prefix = (graphiteOutput as Config.GraphiteOutputElement).Prefix;
+            }
+            else
+            {
+                Log.Warning($"[{nameof(GraphiteMetricPathBuilder)}] prefix not defined for current default output - {graphiteOutput?.Name}");
             }
         }
 
@@ -105,7 +106,7 @@ namespace Crypton.Carbonator
         /// <summary>
         /// Creates a MetricPathBuilder with values from specified performance counter with a path template
         /// </summary>
-        /// <param name="counter"></param
+        /// <param name="counter"></param>
         public GraphiteMetricPathBuilder(PerformanceCounter counter, string pathTemplate) : this(counter)
         {
             Template = pathTemplate;
@@ -131,6 +132,7 @@ namespace Crypton.Carbonator
         /// Replaces characters that would be invalid for a carbon/graphite metric path
         /// </summary>
         /// <param name="input"></param>
+        /// <param name="replacementChar"></param>
         /// <returns></returns>
         public static string ReplaceInvalidCharactersInPath(string input, char replacementChar = '_')
         {
@@ -139,6 +141,6 @@ namespace Crypton.Carbonator
             return new Regex(@"\W").Replace(input, replacementChar.ToString());
         }
 
-        
+
     }
 }

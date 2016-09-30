@@ -56,7 +56,6 @@ namespace Crypton.Carbonator
             variables["COUNTER_INSTANCE"] = metric.Instance ?? string.Empty;
             variables["COUNTER_VALUE"] = metric.Value.ToString("0.000", CultureInfo.InvariantCulture);
             return variables;
-            return variables;
         }
 
         /// <summary>
@@ -85,6 +84,8 @@ namespace Crypton.Carbonator
         /// <returns></returns>
         public static string ResolveDomainName()
         {
+            if (cachedDomainName != null)
+                return cachedDomainName;
             // try with Active Directory first
             string domain = null;
             try
@@ -99,6 +100,9 @@ namespace Crypton.Carbonator
                 domain = Environment.UserDomainName;
                 Log.Debug($"[{nameof(ResolveDomainName)}] unable to use A/D, using UserDomainName: {domain}");
             }
+
+            cachedDomainName = domain;
+
             return domain;
         }
 

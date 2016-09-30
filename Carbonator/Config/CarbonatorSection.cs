@@ -22,18 +22,7 @@ namespace Crypton.Carbonator.Config
                 return ConfigurationManager.GetSection("carbonator") as CarbonatorSection;
             }
         }
-
-
-        /// <summary>
-        /// Gets Graphite server settings
-        /// </summary>
-        [ConfigurationProperty("graphite", IsRequired = false)]
-        public GraphiteOutputElement Graphite
-        {
-            get { return (GraphiteOutputElement)base["graphite"]; }
-            set { base["graphite"] = value; }
-        }
-
+        
         [ConfigurationProperty("output", IsRequired = true)]
         public OutputElementCollection Output
         {
@@ -60,23 +49,7 @@ namespace Crypton.Carbonator.Config
             get { return (string)base["defaultCulture"]; }
             set { base["defaultCulture"] = value; }
         }
-
-        /// <summary>
-        /// <para>Specifies logging level to Windows Event Log</para>
-        /// <para>0= disable logging</para>
-        /// <para>1= log information-</para>
-        /// <para>2= log warnings (and everything below)</para>
-        /// <para>3= log errors (and everything below)</para>
-        /// <para>4= log all</para>
-        /// </summary>
-        [Obsolete]
-        [ConfigurationProperty("logLevel", IsRequired = false, DefaultValue = 1)]
-        public int LogLevel
-        {
-            get { return (int)base["logLevel"]; }
-            set { base["logLevel"] = value; }
-        }
-
+        
         /// <summary>
         /// Specifies where Carbonator logs will be sent to (eventlog, log4net, none)
         /// </summary>
@@ -95,25 +68,6 @@ namespace Crypton.Carbonator.Config
         {
             get { return (int)base["collectionInterval"]; }
             set { base["collectionInterval"] = value; }
-        }
-
-        /// <summary>
-        /// Specifies an interval in milliseconds when metrics are reported from a buffer to the destination graphite server
-        /// </summary>
-        [ConfigurationProperty("reportingInterval", IsRequired = false, DefaultValue = 5000)]
-        public int ReportingInterval
-        {
-            get { return (int)base["reportingInterval"]; }
-            set { base["reportingInterval"] = value; }
-        }
-        /// <summary>
-        /// Specifies maximum number of metrics held in the buffer. No new metrics will be added to the buffer if it is full
-        /// </summary>
-        [ConfigurationProperty("maxMetricBufferSize", IsRequired = false, DefaultValue = 21600)]
-        public int MaxMetricBufferSize
-        {
-            get { return (int)base["maxMetricBufferSize"]; }
-            set { base["maxMetricBufferSize"] = value; }
         }
 
     }

@@ -8,28 +8,45 @@ using System.Threading.Tasks;
 
 namespace Crypton.Carbonator
 {
+
+    /// <summary>
+    /// Defines a single influxdb metric
+    /// </summary>
     public struct InfluxDbMetric
     {
         NameValueCollection variables;
 
+
+        /// <summary>
+        /// Gets hte metric prefix string
+        /// </summary>
         public string Prefix
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Gets the value name of metric (column)
+        /// </summary>
         public string ValueName
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Gets the floating point value
+        /// </summary>
         public float Value
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Gets the UNIX timestamp of when the metric was collected
+        /// </summary>
         public long Timestamp
         {
             get;

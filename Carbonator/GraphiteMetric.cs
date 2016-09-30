@@ -51,13 +51,15 @@ namespace Crypton.Carbonator
             {
                 CategoryName = source.Category,
                 CounterName = source.Name,
-                CounterInstance = source.Instance                
+                CounterInstance = source.Instance
             };
 
             Path = pathBuilder.Format();
             Value = source.Value;
             Timestamp = (long)(source.Timestamp - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
         }
+
+
 
         /// <summary>
         /// Returns on-the-wire string representation of GraphiteMetric
