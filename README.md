@@ -1,7 +1,7 @@
 # Carbonator Service v2 #
 
 A simple Windows Service that collects [Performance Counters](https://msdn.microsoft.com/en-us/library/windows/desktop/aa373083%28v=vs.85%29.aspx) and 
-reports metrics to a [Graphite](http://graphite.readthedocs.org/en/latest/overview.html) or InfluxDB server.
+reports metrics to either a [Graphite](http://graphite.readthedocs.org/en/latest/overview.html) or <a href="https://www.influxdata.com/time-series-platform/influxdb/">InfluxDB</a> server.
 
 See [releases](https://github.com/CryptonZylog/carbonator/releases) for change log/version history.
 
@@ -19,7 +19,10 @@ v2 is currently experimental and includes noticeable breaking changes requiring 
         - The template differs between influxdb and graphite. Graphite templates work just like in v1, however, v2 templates work as a prefix in their [line protocol](https://docs.influxdata.com/influxdb/v0.13/write_protocols/line/).
         - (e.g. ``<add template="disk-space,host=%HOST%,env=prod,disk=%COUNTER_INSTANCE%" ...>
             `` results in ``disk-space,host=MY-PC,env =prod,disk =C: C:=1132578 1473354688679524608`` written to influxdb)
-
+- Removed legacy configuration options
+- Default log output is log4net (carbonator.log file in program's directory)
+- Increased metric buffers
+- Removed support for lower-case host name (%host% variable)
 
 ## :new: InfluxDB output support ##
 
@@ -40,5 +43,3 @@ Example data transmitted for performance counters:
   - Configuration: ``<add template="memory_avail,host=%HOST%,env=prod" category="Memory" counter="Available Bytes" instance="" />``
   - On-the-wire: ``memory_avail,host=MY-PC,env=prod value=1123123123 1473354688679524608``
 
-
-Metrics are submitted in a batch (single POST) every 5 seconds (or as configured in the output setting).
