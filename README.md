@@ -19,7 +19,7 @@ v2 is currently experimental and includes noticeable breaking changes requiring 
         - The template differs between influxdb and graphite. Graphite templates work just like in v1, however, v2 templates work as a prefix in their [line protocol](https://docs.influxdata.com/influxdb/v0.13/write_protocols/line/).
         - (e.g. ``<add template="disk-space,host=%HOST%,env=prod,disk=%COUNTER_INSTANCE%" ...>
             `` results in ``disk-space,host=MY-PC,env =prod,disk =C: C:=1132578 1473354688679524608`` written to influxdb)
-- Removed legacy configuration options
+- Removed legacy configuration options (logLevel, reportingInterval at root)
 - Default log output is log4net (carbonator.log file in program's directory)
 - Increased metric buffers
 - Removed support for lower-case host name (%host% variable)
@@ -43,3 +43,15 @@ Example data transmitted for performance counters:
   - Configuration: ``<add template="memory_avail,host=%HOST%,env=prod" category="Memory" counter="Available Bytes" instance="" />``
   - On-the-wire: ``memory_avail,host=MY-PC,env=prod value=1123123123 1473354688679524608``
 
+## Troubleshooting ##
+
+If Carbonator does not start, it is likely due to configuration error.
+Such errors are automatically logged to the Windows Event Log under 'carbonator' source.
+
+Example:
+
+```
+Service cannot be started. System.Configuration.ConfigurationErrorsException: Unrecognized attribute 'reportingInterval'. Note that attribute names are case-sensitive. (D:\Carbonator\Crypton.Carbonator.exe.Config line 13)
+```
+
+Solution: remove obsolete 'reportingInterval' attribute in .config.
