@@ -28,6 +28,7 @@ namespace Crypton.Carbonator
             public bool IsRunning = false;
             public bool Started = false;
             public bool Run = true;
+            public uint ReportNumber = 1;
         }
 
         /// <summary>
@@ -94,7 +95,8 @@ namespace Crypton.Carbonator
                             batchString.NewLine = "\n";
                             foreach (var metric in batch)
                             {
-                                batchString.WriteLine(influxDbMetric);
+                                batchString.WriteLine(metric);
+                                Log.Debug($"[{nameof(reportMetricsAsync)}] (#{state.ReportNumber}) metric string: {metric.ToString()}");
                             }
 
                             batch = null;
@@ -112,10 +114,11 @@ namespace Crypton.Carbonator
                                     if (task.Wait(TimeSpan.FromSeconds(config.TimeoutSeconds)))
                                     {
                                         var result = task.Result;
+                                        Log.Debug($"[{nameof(reportMetricsAsync)}] response: HTTP {(int)result.StatusCode} {result.ReasonPhrase}: -> {result.Content.ReadAsStringAsync().Result}");
                                         if (result.StatusCode != HttpStatusCode.NoContent)
                                         {
                                             string responseText = result.Content.ReadAsStringAsync().Result;
-                                            Log.Warning($"[{nameof(reportMetricsAsync)}] response from influxdb {result.StatusCode} {result.ReasonPhrase} -> {responseText}");
+                                            Log.Warning($"[{nameof(reportMetricsAsync)}] (#{state.ReportNumber}) response from influxdb {result.StatusCode} {result.ReasonPhrase} -> {responseText}");
                                         }
                                     }
                                 }
@@ -126,10 +129,14 @@ namespace Crypton.Carbonator
             }
             catch (Exception any)
             {
-                Log.Error($"[{nameof(reportMetricsAsync)}] general exception: {any.Message}");
+                Log.Error($"[{nameof(reportMetricsAsync)}] (#{state.ReportNumber}) general exception: {any.Message}");
             }
             finally
             {
+                unchecked
+                {
+                    state.ReportNumber++;
+                }
                 state.IsRunning = false;
             }
         }

@@ -30,6 +30,8 @@ namespace Crypton.Carbonator
         private class StateControl
         {
             public bool IsRunning = false;
+            public uint CheckNumber = 1;
+            public CultureInfo Culture = null;
         }
         #endregion
 
@@ -70,7 +72,17 @@ namespace Crypton.Carbonator
             }
 
             // start collection and reporting timers
-            metricCollectorTimer = new Timer(collectMetrics, new StateControl(), conf.CollectionInterval, conf.CollectionInterval);
+            CultureInfo culture;
+            try
+            {
+                culture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
+            }
+            catch (Exception any)
+            {
+                Log.Fatal($"[{nameof(StartCollection)}] unable to find specific culture in configuration: {conf.DefaultCulture} -> {any.Message}; verify that is a known culture string");
+                throw;
+            }
+            metricCollectorTimer = new Timer(collectMetrics, new StateControl() { Culture = culture }, conf.CollectionInterval, conf.CollectionInterval);
 
             // start output client
             var configuredName = Config.CarbonatorSection.Current.Output.DefaultOutput;
@@ -132,8 +144,8 @@ namespace Crypton.Carbonator
             control.IsRunning = true;
 
             // restore configured culture setting for this async thread
-            Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(conf.DefaultCulture);
+            Thread.CurrentThread.CurrentCulture = control.Culture;
+            Thread.CurrentThread.CurrentUICulture = control.Culture;
 
             // gather metrics from all watchers
             List<CollectedMetric> metrics = new List<CollectedMetric>();
@@ -145,7 +157,7 @@ namespace Crypton.Carbonator
                 }
                 catch (Exception any)
                 {
-                    Log.Warning("[collectMetrics] Failed to Report on counter watcher for path '{0}'; this report will be skipped for now: {1} (inner: {2})", watcher.MetricPath, any.Message, any.InnerException != null ? any.InnerException.Message : "(null)");
+                    Log.Warning($"[{nameof(collectMetrics)}] (#{control.CheckNumber}) Failed to Report on counter watcher for path '{watcher.MetricPath}'; this report will be skipped for now: {any.Message} (inner: {any.InnerException?.Message})");
                     continue;
                 }
             }
@@ -155,8 +167,15 @@ namespace Crypton.Carbonator
             {
                 if (!outputClient.TryAdd(item))
                 {
-                    Log.Warning("[collectMetrics] Failed to relocate collected metrics to buffer for sending, buffer may be full; increase metric buffer in configuration");
+                    Log.Warning($"[{nameof(collectMetrics)}] (#{control.CheckNumber}) Failed to relocate collected metrics to buffer for sending, buffer may be full; increase metric buffer in configuration");
                 }
+
+                Log.Debug($"[{nameof(collectMetrics)}] (#{control.CheckNumber}) item stringified: {item.ToString()}");
+            }
+
+            unchecked
+            {
+                control.CheckNumber++;
             }
 
             control.IsRunning = false;

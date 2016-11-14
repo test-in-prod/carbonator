@@ -52,6 +52,11 @@ namespace Crypton.Carbonator
             Instance = instance;
             Timestamp = DateTime.UtcNow;
         }
-        
+
+        public override string ToString()
+        {
+            return $"Template={Template} Category={Category} Name={Name} Instance={Instance} Value={Value} Timestamp={Timestamp}";
+        }
+
     }
 }

@@ -120,6 +120,11 @@ namespace Crypton.Carbonator
                 var filtered = counters.Where(c => Regex.IsMatch(c.CounterName, CounterName));
                 _counters.AddRange(filtered);
             }
+
+            foreach(var loaded in _counters)
+            {
+                Log.Info($"[{nameof(CounterWatcher)}] loaded counter '{loaded.CounterName}' with instance {loaded.InstanceName ?? "(null)"} in category '{loaded.CategoryName}' for metric path {MetricPath}");
+            }
         }
 
         /// <summary>
