@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ServiceProcess;
 using System.Text;
+using System.Threading;
 
 namespace Crypton.Carbonator
 {
@@ -15,6 +16,14 @@ namespace Crypton.Carbonator
 
         public static void Main(string[] args)
         {
+            var exitEvent = new ManualResetEvent(false);
+            
+            // Set an event handler for ctrl-c
+            Console.CancelKeyPress += (sender, eventArgs) => {
+                eventArgs.Cancel = true;
+                exitEvent.Set();
+            };
+
             // log some debugging info to console
             if (args.Contains("--verbose"))
             {
@@ -32,8 +41,8 @@ namespace Crypton.Carbonator
                 // console mode
                 ConsoleMode = true;
                 CarbonatorInstance.StartCollection();
-                Console.WriteLine("Press any key to stop . . .");
-                Console.ReadKey();
+                Console.WriteLine("Press ctrl-c to stop . . .");
+                exitEvent.WaitOne();
                 CarbonatorInstance.StopCollection();
             }
         }
