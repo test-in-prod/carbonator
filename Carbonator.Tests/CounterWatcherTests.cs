@@ -55,5 +55,23 @@ namespace Carbonator.Tests
 
 
         }
+
+        [TestMethod]
+        public void TestFirstPctIdleTimeValue()
+        {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
+            CounterWatcher watcher = new CounterWatcher();
+            watcher.MetricPath = "PerfMon.MES.%HOST%.Processor.PctIdleTime.%COUNTER_INSTANCE%";
+            watcher.CategoryName = "Processor";
+            watcher.CounterName = "% Idle Time";
+            watcher.InstanceNames = @"_Total";
+            watcher.Initialize();
+
+            List<CollectedMetric> metrics = new List<CollectedMetric>();
+            watcher.Report(metrics);
+            Assert.IsTrue(metrics[0].Value > 0f, "First sample for % Idle Time should be greater than zero");
+        }
     }
 }
