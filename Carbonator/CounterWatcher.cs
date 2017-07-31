@@ -110,7 +110,7 @@ namespace Crypton.Carbonator
 
                     // filter by counter names
                     var filtered = counters.Where(c => Regex.IsMatch(c.CounterName, CounterName));
-                    _counters.AddRange(filtered);
+                    AddCounters(filtered);
                 }
             }
             else
@@ -118,7 +118,7 @@ namespace Crypton.Carbonator
                 // match counters
                 var counters = counterCategory.GetCounters();
                 var filtered = counters.Where(c => Regex.IsMatch(c.CounterName, CounterName));
-                _counters.AddRange(filtered);
+                AddCounters(filtered);
             }
         }
 
@@ -160,6 +160,17 @@ namespace Crypton.Carbonator
                 counter.Dispose();
             }
             _counters.Clear();
+        }
+
+        private void AddCounters(IEnumerable<PerformanceCounter> filtered)
+        {
+            foreach (var counter in filtered)
+            {
+                // Some performance counters require deltas to give sensible values. By calling NextValue
+                // on each of our counters, we prime them to return correct one each subsequent call.
+                counter.NextValue();
+                _counters.Add(counter);
+            }        
         }
     }
 }
