@@ -1,4 +1,9 @@
-# Carbonator Service #
+# ⚠️ This repository is archived
+
+Carbonator was a project that started before modern tools like [telegraf](https://www.influxdata.com/get-telegraf/) were available. This repository is now archived and code will remain here for a little while longer before being deleted.
+
+
+## Carbonator Service #
 
 A simple Windows Service that collects [Performance Counters](https://msdn.microsoft.com/en-us/library/windows/desktop/aa373083%28v=vs.85%29.aspx) and 
 reports metrics to a [Graphite](http://graphite.readthedocs.org/en/latest/overview.html) server.
